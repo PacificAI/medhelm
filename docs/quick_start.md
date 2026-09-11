@@ -87,6 +87,26 @@ uv run helm-summarize --suite board_exams
 uv run helm-server --suite board_exams
 ```
 
+## PhysicianBench (EHR agent)
+
+Requires a sibling PhysicianBench checkout, Docker, and the FHIR image. See [PhysicianBench](physician_bench.md) for install, API keys, and how to run **one task** vs **all 100**.
+
+From `medhelm/` after `uv pip install -e ".[physician-bench]"`:
+
+```sh
+export PHYSICIAN_BENCH_ROOT=/path/to/PhysicianBench
+
+# one named task
+.venv/bin/medhelm-run --run-entries \
+  "physician_bench:task_ids=aortic_aneurysm_cad,max_steps=30,reasoning_effort=medium,model=openai/gpt-5-mini,model_deployment=openai/gpt-5-mini" \
+  --suite pb-poc --max-eval-instances 1 --num-threads 1
+
+# all 100 v1 tasks (omit task_ids)
+.venv/bin/medhelm-run --run-entries \
+  "physician_bench:reasoning_effort=medium,model=openai/gpt-5-mini,model_deployment=openai/gpt-5-mini" \
+  --suite pb-poc --max-eval-instances 100 --num-threads 1
+```
+
 ## Summary
 
 | Tier | Install | Scenarios |
@@ -94,5 +114,6 @@ uv run helm-server --suite board_exams
 | **Standard** | `uv pip install -e .` (repo) or `uv pip install medhelm` (PyPI) | PubMedQA, MedCalc-Bench, MedicationQA, MedHallu |
 | **Summarization** | `uv pip install "medhelm[summarization]"` | DischargeMe (needs data_path), ACI-Bench, Patient-Edu (2–3 min install) |
 | **Gated** | `uv pip install "medhelm[gated]"` | MedQA, MedMCQA (Drive) |
+| **PhysicianBench** | `uv pip install -e ".[physician-bench]"` plus sibling checkout | EHR-agent tasks; see [PhysicianBench](physician_bench.md) |
 
 You can use `pip install medhelm` (and `pip install "medhelm[summarization]"` / `pip install "medhelm[gated]"`) instead of `uv pip install`; then run with `medhelm-run` (or `helm-run`), `helm-summarize`, and `helm-server`.
