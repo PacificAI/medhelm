@@ -16,6 +16,13 @@ model_deployments:
     client_spec:
       class_name: "helm.clients.simple_client.SimpleClient"
 
+  - name: pb/harness
+    model_name: pb/harness
+    tokenizer_name: simple/tokenizer1
+    max_sequence_length: 8192
+    client_spec:
+      class_name: "helm.clients.physician_bench_client.PhysicianBenchClient"
+
   # Stanford Health Care
   # For internal use only for MedHELM
   # Placed earlier in the file to make them non-default
@@ -2824,6 +2831,13 @@ model_deployments:
 
   - name: openai/gpt-5-mini-2025-08-07
     model_name: openai/gpt-5-mini-2025-08-07
+    tokenizer_name: openai/o200k_base
+    max_sequence_length: 400000
+    client_spec:
+      class_name: "helm.clients.openai_responses_client.OpenAIResponseClient"
+
+  - name: openai/gpt-5-mini
+    model_name: openai/gpt-5-mini
     tokenizer_name: openai/o200k_base
     max_sequence_length: 400000
     client_spec:

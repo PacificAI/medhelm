@@ -26,6 +26,14 @@ models:
     access: open
     release_date: 2023-01-01
     tags: [TEXT_MODEL_TAG, FULL_FUNCTIONALITY_TEXT_MODEL_TAG]
+
+  - name: pb/harness
+    display_name: PhysicianBench Harness
+    description: Internal routing deployment that runs a PhysicianBench FHIR+MiniAgent episode. Leaderboard rows use the evaluated MedHELM model, not this name.
+    creator_organization_name: Helm
+    access: open
+    release_date: 2026-01-01
+    tags: [TEXT_MODEL_TAG, FULL_FUNCTIONALITY_TEXT_MODEL_TAG]
     
   # Adobe
   - name: adobe/giga-gan
@@ -3278,6 +3286,14 @@ models:
   - name: openai/gpt-5-mini-2025-08-07
     display_name: GPT-5 mini (2025-08-07)
     description: GPT-5 mini (2025-08-07) is a multimdodal model trained for real-world coding tasks and long-running agentic tasks. ([blog](https://openai.com/index/introducing-gpt-5-for-developers/), [system card](https://cdn.openai.com/pdf/8124a3ce-ab78-4f06-96eb-49ea29ffb52f/gpt5-system-card-aug7.pdf))
+    creator_organization_name: OpenAI
+    access: limited
+    release_date: 2025-08-07
+    tags: [TEXT_MODEL_TAG, VISION_LANGUAGE_MODEL_TAG, OPENAI_CHATGPT_MODEL_TAG, LIMITED_FUNCTIONALITY_TEXT_MODEL_TAG, INSTRUCTION_FOLLOWING_MODEL_TAG]
+
+  - name: openai/gpt-5-mini
+    display_name: GPT-5 mini
+    description: OpenRouter / OpenAI GPT-5 mini alias of openai/gpt-5-mini-2025-08-07 (PhysicianBench native model id).
     creator_organization_name: OpenAI
     access: limited
     release_date: 2025-08-07

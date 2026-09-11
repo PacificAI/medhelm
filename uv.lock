@@ -4263,6 +4263,11 @@ openai = [
     { name = "pydantic" },
     { name = "tiktoken" },
 ]
+physician-bench = [
+    { name = "openai" },
+    { name = "python-dotenv" },
+    { name = "requests" },
+]
 plots = [
     { name = "colorcet" },
     { name = "matplotlib", version = "3.10.9", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11' or (extra == 'extra-7-medhelm-human-evaluation' and extra == 'extra-7-medhelm-ibm')" },
@@ -4448,6 +4453,7 @@ requires-dist = [
     { name = "omegaconf", marker = "extra == 'heim'", specifier = "~=2.3" },
     { name = "open-clip-torch", marker = "extra == 'vlm'", specifier = "~=2.24" },
     { name = "openai", marker = "extra == 'openai'", specifier = "~=2.20.0" },
+    { name = "openai", marker = "extra == 'physician-bench'" },
     { name = "openai-whisper", marker = "extra == 'audiolm'", specifier = "==20240930" },
     { name = "opencv-python", marker = "python_full_version >= '3.10' and extra == 'heim'", specifier = ">=4.7.0.68,<4.8.2.0" },
     { name = "opencv-python-headless", marker = "python_full_version < '3.10' and extra == 'heim'", specifier = ">=4.7.0.68,<=4.11.0.86" },
@@ -4468,11 +4474,13 @@ requires-dist = [
     { name = "pymongo", marker = "extra == 'mongo'", specifier = "~=4.2" },
     { name = "python-docx", specifier = "~=1.1" },
     { name = "python-docx", marker = "extra == 'medhelm'", specifier = "~=1.1" },
+    { name = "python-dotenv", marker = "extra == 'physician-bench'" },
     { name = "pytorch-fid", marker = "extra == 'heim'", specifier = "~=0.3.0" },
     { name = "pytorch-lightning", marker = "extra == 'heim'", specifier = "~=2.0" },
     { name = "qwen-vl-utils", marker = "extra == 'vlm'", specifier = "~=0.0.8" },
     { name = "rapidfuzz", marker = "extra == 'audiolm'", specifier = "~=3.10" },
     { name = "reka-api", marker = "extra == 'reka'", specifier = "~=2.0" },
+    { name = "requests", marker = "extra == 'physician-bench'" },
     { name = "retrying", specifier = "~=1.3" },
     { name = "rouge-score", specifier = "~=0.1.2" },
     { name = "rouge-score", marker = "extra == 'summarization'", specifier = "~=0.1.2" },
@@ -4515,7 +4523,7 @@ requires-dist = [
     { name = "writerai", marker = "extra == 'writer'", specifier = "~=4.0" },
     { name = "zstandard", specifier = "~=0.18.0" },
 ]
-provides-extras = ["proxy-server", "human-evaluation", "dspy", "scenarios", "metrics", "summarization", "plots", "slurm", "images", "mongo", "accelerate", "ai21", "aleph-alpha", "allenai", "amazon", "anthropic", "cohere", "writer", "mistral", "openai", "google", "together", "yandex", "models", "reka", "vlm", "ibm", "heim", "medhelm", "gated", "audiolm", "all", "ci", "litellm"]
+provides-extras = ["proxy-server", "human-evaluation", "dspy", "scenarios", "metrics", "summarization", "plots", "slurm", "images", "mongo", "accelerate", "ai21", "aleph-alpha", "allenai", "amazon", "anthropic", "cohere", "writer", "mistral", "openai", "google", "together", "yandex", "models", "reka", "vlm", "ibm", "heim", "medhelm", "gated", "physician-bench", "audiolm", "all", "ci", "litellm"]
 
 [package.metadata.requires-dev]
 dev = [

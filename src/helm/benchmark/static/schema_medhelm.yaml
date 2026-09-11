@@ -281,6 +281,54 @@ metrics:
     description: Measures the average score assigned by an LLM-based jury evaluating task performance for HealthBench Professional scenarios and a score comparring the response with the one from a physicians
     lower_is_better: false
 
+  - name: physician_bench_score
+    display_name: PhysicianBench Score
+    short_display_name: PB Score
+    description: Fraction of PhysicianBench pytest checkpoints passed on long-horizon EHR agent tasks.
+    lower_is_better: false
+
+  - name: physician_bench_pass
+    display_name: PhysicianBench Pass Rate
+    short_display_name: PB Pass
+    description: Fraction of PhysicianBench tasks on which every pytest checkpoint passed.
+    lower_is_better: false
+
+  - name: physician_bench_checkpoints_passed
+    display_name: PhysicianBench Checkpoints Passed
+    short_display_name: PB Passed
+    description: Number of PhysicianBench pytest checkpoints passed on the task.
+    lower_is_better: false
+
+  - name: physician_bench_checkpoints_total
+    display_name: PhysicianBench Checkpoints Total
+    short_display_name: PB Total
+    description: Number of PhysicianBench pytest checkpoints on the task.
+    lower_is_better: false
+
+  - name: physician_bench_steps
+    display_name: PhysicianBench Steps
+    short_display_name: PB Steps
+    description: Number of MiniAgent LLM steps taken during a PhysicianBench episode.
+    lower_is_better: true
+
+  - name: physician_bench_prompt_tokens
+    display_name: PhysicianBench Prompt Tokens
+    short_display_name: PB Prompt Tok
+    description: Sum of MiniAgent prompt tokens across all llm_response steps on the task.
+    lower_is_better: true
+
+  - name: physician_bench_completion_tokens
+    display_name: PhysicianBench Completion Tokens
+    short_display_name: PB Completion Tok
+    description: Sum of MiniAgent completion tokens across all llm_response steps on the task.
+    lower_is_better: true
+
+  - name: physician_bench_tokens
+    display_name: PhysicianBench Tokens
+    short_display_name: PB Tokens
+    description: Total MiniAgent tokens on the task (prompt plus completion, summed across steps).
+    lower_is_better: true
+
 
   # Summariazation metrics
   - name: summac
@@ -478,6 +526,19 @@ metric_groups:
     - name: num_output_tokens
       split: ${main_split}
 
+  - name: physician_bench_usage
+    display_name: MiniAgent usage
+    hide_win_rates: true
+    metrics:
+    - name: physician_bench_steps
+      split: ${main_split}
+    - name: physician_bench_prompt_tokens
+      split: ${main_split}
+    - name: physician_bench_completion_tokens
+      split: ${main_split}
+    - name: physician_bench_tokens
+      split: ${main_split}
+
   - name: toxicity
     display_name: Toxicity
     metrics:
@@ -518,6 +579,7 @@ run_groups:
       - sct_bench
       - health_bench
       - health_bench_professional
+      - physician_bench
       - medxpert_qa_text
 
   - name: clinical_note_generation
@@ -637,6 +699,24 @@ run_groups:
       who: "Clinician"
       when: "Any"
       language: "English"
+
+  - name: physician_bench
+    display_name: PhysicianBench
+    description: "PhysicianBench evaluates LLM agents on 100 long-horizon physician tasks (670 pytest checkpoints) in a real EHR environment accessed via FHIR APIs. Scoring is the fraction of checkpoints passed [(Liu et al., 2026)](https://arxiv.org/abs/2605.02240)."
+    metric_groups:
+      - accuracy
+      - efficiency
+      - physician_bench_usage
+      - general_information
+    environment:
+      main_name: physician_bench_score
+      main_split: test
+    taxonomy:
+      task: EHR agent evaluation
+      what: Complete physician workflows including data retrieval, orders, and documentation
+      who: Clinician
+      when: Any
+      language: English
 
   - name: clear
     display_name: CLEAR

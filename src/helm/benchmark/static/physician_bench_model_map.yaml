@@ -1,0 +1,29 @@
+# Override map for PhysicianBench. Unmapped models fail closed.
+# Exact `model` / `model_deployment` matches win over `model_prefix`.
+# `pb_model_id` is the MiniAgent --model string; if omitted, evaluated_model is used as-is.
+
+models:
+  - model: simple/model1
+    backend: stub
+    pb_model_id: stub
+
+  # Native PhysicianBench / OpenRouter slug (also registered as a MedHELM alias).
+  - model: openai/gpt-5-mini
+    backend: physician_bench
+    pb_model_id: openai/gpt-5-mini
+
+  - model: openai/gpt-5-mini-2025-08-07
+    backend: physician_bench
+    pb_model_id: openai/gpt-5-mini
+
+  - model_prefix: "openai/"
+    backend: physician_bench
+
+  - model_prefix: "anthropic/"
+    backend: physician_bench
+
+  - model_prefix: "xai/"
+    backend: physician_bench
+
+  - model_prefix: "google/"
+    backend: physician_bench

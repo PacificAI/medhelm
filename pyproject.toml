@@ -306,6 +306,16 @@ gated = [
     "gdown~=5.1",
 ]
 
+# EHR-agent PhysicianBench scenario. Also install the sibling checkout:
+#   uv pip install -e ../PhysicianBench
+# and set PHYSICIAN_BENCH_ROOT. A pre-loaded FHIR Docker image (fhir-full:v1) is required
+# for real episodes; simple/model1 is a stub that skips Docker.
+physician-bench = [
+    "openai",
+    "python-dotenv",
+    "requests",
+]
+
 audiolm = [
     "medhelm[openai]",
     "medhelm[google]",

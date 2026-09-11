@@ -11,6 +11,7 @@ import numpy as np
 
 from tqdm import tqdm
 
+from helm.benchmark.adaptation.adapter_spec import ADAPT_PHYSICIAN_BENCH
 from helm.benchmark.adaptation.request_state import RequestState
 from helm.common.general import ensure_directory_exists, write, asdict_without_nones
 from helm.common.hierarchical_logger import hlog, htrack_block, hwarn
@@ -73,6 +74,23 @@ class RunnerError(Exception):
     """Error that happens in the Runner."""
 
     pass
+
+
+def execute_parallelism_for_run(adapter_method: str, requested: int) -> int:
+    """Return executor thread count for this run.
+
+    MedHELM ``--num-threads`` is an in-process ``ThreadPoolExecutor``. PhysicianBench
+    binds a fixed Docker host port and sets process-global ``FHIR_BASE_URL`` / cwd,
+    so episodes stay serial.
+    """
+    if adapter_method == ADAPT_PHYSICIAN_BENCH and requested != 1:
+        hwarn(
+            "PhysicianBench uses a Docker FHIR container on a fixed host port, "
+            "which is not thread-safe; "
+            f"ignoring --num-threads {requested} and running episodes serially."
+        )
+        return 1
+    return requested
 
 
 def remove_stats_nans(stats: List[Stat]) -> List[Stat]:
@@ -228,6 +246,17 @@ class Runner:
             failed_runs_str = ", ".join([f'"{run_spec.name}"' for run_spec in failed_run_specs])
             raise RunnerError(f"Failed runs: [{failed_runs_str}]")
 
+    def _execute_requests(self, run_spec: RunSpec, scenario_state: ScenarioState) -> ScenarioState:
+        """Issue model requests. PhysicianBench episodes run serially even if ``--num-threads`` > 1."""
+        original_spec = self.executor.execution_spec
+        effective = execute_parallelism_for_run(run_spec.adapter_spec.method, original_spec.parallelism)
+        if effective != original_spec.parallelism:
+            self.executor.execution_spec = dataclasses.replace(original_spec, parallelism=effective)
+        try:
+            return self.executor.execute(scenario_state)
+        finally:
+            self.executor.execution_spec = original_spec
+
     def run_one(self, run_spec: RunSpec):
         global _CURRENT_RUN_SPEC_NAME
         _CURRENT_RUN_SPEC_NAME = run_spec.name
@@ -293,8 +322,9 @@ class Runner:
             annotator_specs=run_spec.annotators,
         )
 
-        # Execute (fill up results)
-        scenario_state = self.executor.execute(scenario_state)
+        # Execute (fill up results). PhysicianBench episodes are Docker + chdir;
+        # MedHELM ``--num-threads`` is an in-process pool.
+        scenario_state = self._execute_requests(run_spec, scenario_state)
 
         # Annotate (post-process the results)
         scenario_state = self.annotator_executor.execute(scenario_state)

@@ -52,6 +52,7 @@ nav:
     - importing_custom_modules.md
     - adding_new_models.md
     - adding_new_scenarios.md
+    - physician_bench.md
     - adding_new_tokenizers.md
     - downloading_raw_results.md
     - reproducing_leaderboards.md

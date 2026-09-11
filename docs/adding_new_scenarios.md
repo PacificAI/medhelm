@@ -19,6 +19,7 @@ For production MedHELM scenarios, see real implementations such as:
 - `medi_qa_scenario.py` — Hugging Face dataset with retry logic
 - `med_dialog_scenario.py` — external data download
 - `dischargeme_scenario.py` — summarization (requires `[summarization]` extra)
+- `physician_bench_scenario.py` — EHR agent wrap of PhysicianBench (see [PhysicianBench](physician_bench.md))
 
 Run specs for MedHELM live in `src/helm/benchmark/run_specs/medhelm_run_specs.py`.
 
