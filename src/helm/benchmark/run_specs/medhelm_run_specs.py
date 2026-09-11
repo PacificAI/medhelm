@@ -15,6 +15,7 @@ from helm.benchmark.adaptation.adapter_spec import (
     ADAPT_MULTIPLE_CHOICE_JOINT,
     ADAPT_CHAT,
     ADAPT_HEALTH_ADMIN_BENCH,
+    ADAPT_PHYSICIAN_BENCH,
     AdapterSpec,
 )
 from helm.benchmark.adaptation.common_adapter_specs import (
@@ -1973,4 +1974,73 @@ def get_health_admin_bench_spec(
         adapter_spec=adapter_spec,
         metric_specs=metric_specs,
         groups=["health_admin_bench"],
+    )
+
+
+@run_spec_function("physician_bench")
+def get_physician_bench_spec(
+    task_ids: str = "",
+    pb_root: str = "",
+    version: str = "v1",
+    max_steps: str = "",
+    fhir_image: str = "",
+    port: str = "",
+    reasoning_effort: str = "",
+    temperature: str = "",
+) -> RunSpec:
+    scenario_args: Dict[str, str] = {
+        "version": version,
+    }
+    if pb_root:
+        scenario_args["pb_root"] = pb_root
+    if task_ids:
+        scenario_args["task_ids"] = task_ids
+
+    scenario_spec = ScenarioSpec(
+        class_name="helm.benchmark.scenarios.physician_bench_scenario.PhysicianBenchScenario",
+        args=scenario_args,
+    )
+
+    knobs: Dict[str, Union[str, int, float]] = {
+        "pb_root": pb_root,
+    }
+    if max_steps:
+        knobs["max_steps"] = int(max_steps)
+    if fhir_image:
+        knobs["fhir_image"] = fhir_image
+    if port:
+        knobs["port"] = int(port)
+    if reasoning_effort:
+        knobs["reasoning_effort"] = reasoning_effort
+    if temperature:
+        knobs["temperature"] = float(temperature)
+
+    adapter_spec = AdapterSpec(
+        method=ADAPT_PHYSICIAN_BENCH,
+        instructions=json.dumps(knobs),
+        input_prefix="",
+        input_suffix="",
+        output_prefix="",
+        output_suffix="",
+        instance_prefix="",
+        max_train_instances=0,
+        num_outputs=1,
+        max_tokens=1,
+        temperature=0.0,
+        stop_sequences=[],
+    )
+
+    metric_specs = [
+        MetricSpec(
+            class_name="helm.benchmark.metrics.physician_bench_metrics.PhysicianBenchMetric",
+            args={},
+        )
+    ] + get_basic_metric_specs([])
+
+    return RunSpec(
+        name="physician_bench",
+        scenario_spec=scenario_spec,
+        adapter_spec=adapter_spec,
+        metric_specs=metric_specs,
+        groups=["physician_bench"],
     )
