@@ -19,7 +19,7 @@ For production MedHELM scenarios, see real implementations such as:
 - `medi_qa_scenario.py` — Hugging Face dataset with retry logic
 - `med_dialog_scenario.py` — external data download
 - `dischargeme_scenario.py` — summarization (requires `[summarization]` extra)
-- `health_admin_bench_scenario.py` — computer-use HealthAdminBench wrap (see [HealthAdminBench](health_admin_bench.md))
+- `health_admin_bench_scenario.py` — computer-use HealthAdminBench wrap (see [HealthAdminBench](/health_admin_bench))
 
 Run specs for MedHELM live in `src/helm/benchmark/run_specs/medhelm_run_specs.py`.
 
