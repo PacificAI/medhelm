@@ -64,6 +64,9 @@ class OpenAIClientUtils:
         "See https://labs.openai.com/policies/content-policy for more information."
     )
 
+    # Cyber_policy content safety guidelines error message
+    CYBER_POLICY_VIOLATED_ERROR: str = "This content was flagged for possible cybersecurity risk."
+
     @classmethod
     def handle_openai_error(cls, e: OpenAIError, request: Request):
         if cls.INAPPROPRIATE_IMAGE_ERROR in str(e) or cls.INAPPROPRIATE_PROMPT_ERROR in str(e):
@@ -118,6 +121,15 @@ class OpenAIClientUtils:
                 cached=False,
                 error="Grok API error: Content violates usage guidelines",
                 completions=[],
+                embedding=[],
+                error_flags=ErrorFlags(is_retriable=False, is_fatal=False),
+            )
+        elif cls.CYBER_POLICY_VIOLATED_ERROR in str(e):
+            return RequestResult(
+                success=False,
+                cached=False,
+                error="Content blocked due to possible cybersecurity risk",
+                completions=[e],
                 embedding=[],
                 error_flags=ErrorFlags(is_retriable=False, is_fatal=False),
             )
