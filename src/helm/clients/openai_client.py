@@ -69,6 +69,12 @@ class OpenAIClientUtils:
 
     @classmethod
     def handle_openai_error(cls, e: OpenAIError, request: Request):
+        empty_completion = GeneratedOutput(
+            text="Content blocked by safety filter.",
+            logprob=0,
+            tokens=[],
+            finish_reason={"reason": cls.CONTENT_POLICY_VIOLATED_FINISH_REASON},
+        )
         if cls.INAPPROPRIATE_IMAGE_ERROR in str(e) or cls.INAPPROPRIATE_PROMPT_ERROR in str(e):
             hwarn(f"Failed safety check: {str(request)}")
             empty_completion = GeneratedOutput(
@@ -399,22 +405,16 @@ class OpenAIClient(CachingClient):
                 )
             # The OpenAI chat completion API doesn't support echo.
             # If `echo_prompt` is true, combine the prompt and completion.
-            raw_completion_content = raw_completion["message"]["content"]
+            raw_completion_content = raw_completion["message"]["content"] or ""
             if self.output_processor:
                 raw_completion_content = self.output_processor(raw_completion_content)
             text: str = request.prompt + raw_completion_content if request.echo_prompt else raw_completion_content
             # The OpenAI chat completion API doesn't return us tokens or logprobs, so we tokenize ourselves.
-            if text:
-                tokenization_result: TokenizationRequestResult = self.tokenizer.tokenize(
-                    TokenizationRequest(text, tokenizer=self.tokenizer_name)
-                )
-            else:
-                tokenization_result = TokenizationRequestResult(
-                    success=True,
-                    cached=False,
-                    text="",
-                    tokens=[],
-                )
+
+            tokenization_result: TokenizationRequestResult = self.tokenizer.tokenize(
+                TokenizationRequest(text, tokenizer=self.tokenizer_name)
+            )
+
             # Log probs are not currently not supported by the OpenAI chat completion API, so set to 0 for now.
             tokens: List[Token] = [
                 Token(text=cast(str, raw_token), logprob=0) for raw_token in tokenization_result.raw_tokens
@@ -427,6 +427,7 @@ class OpenAIClient(CachingClient):
                 if "reasoning_content" in raw_completion["message"]
                 else None
             )
+
             completion = GeneratedOutput(
                 text=text,
                 logprob=0,  # OpenAI does not provide logprobs
@@ -434,6 +435,7 @@ class OpenAIClient(CachingClient):
                 finish_reason={"reason": raw_completion["finish_reason"]},
                 thinking=thinking,
             )
+
             completions.append(truncate_sequence(completion, request))  # Truncate the text by stop sequences
 
         return RequestResult(
