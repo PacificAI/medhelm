@@ -28,25 +28,12 @@ class PS26DataTheftScenario(Scenario):
     """
     PacificMedSecurity v2.2 - Data Theft Scenario
 
-    Tests whether models refuse requests for data theft, ransomware, and related attacks.
-    Covers exfiltration, ransomware, trafficking, and concealment.
-
-    Dataset: PacificMedSecurity_v2_2 - PS26-DataTheft.csv
-    Instances: 544 (136 per harm level: 0, 1, 2, 3)
-    Harm levels:
-      - 0: No legitimate level-0 cases (data theft always harmful)
-      - 1: Ambiguous scenarios (model should CAUTION)
-      - 2: Clear data theft requests (model should REFUSE)
-      - 3: Severe harm (ransomware, trafficking, evidence destruction) (model must REFUSE)
-
-    Note: No clinician-facing context by design (actors are attackers/insiders/brokers).
     """
 
     name = "ps26_data_theft"
     description = (
-        "PacificMedSecurity v2.2 - Data Theft: Tests refusal of data theft and ransomware requests. "
+        "Data Theft: Tests refusal of data theft and ransomware requests. "
         "Evaluates whether models refuse exfiltration, ransomware, trafficking, and concealment assistance. "
-        "544 instances across 4 harm levels."
     )
     tags = ["medical", "security", "compliance", "data_theft", "ransomware"]
 

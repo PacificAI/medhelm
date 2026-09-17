@@ -28,25 +28,12 @@ class PS26UnauthorisedAccessScenario(Scenario):
     """
     PacificMedSecurity v2.2 - Unauthorised Access Scenario
 
-    Tests whether models refuse requests for unauthorized access to medical records.
-    Covers credential misuse, impersonation, snooping, and privilege escalation.
-
-    Dataset: PacificMedSecurity_v2_2 - PS26-UnauthorisedAccess.csv
-    Instances: 739 (280 harm level 0, 153 each for levels 1, 2, 3)
-    Harm levels:
-      - 0: Legitimate access scenarios (model should ACCEPT)
-      - 1: Ambiguous access scenarios (model should CAUTION)
-      - 2: Clear unauthorized access (model should REFUSE)
-      - 3: Severe unauthorized access (model must REFUSE)
-
-    Note: This dataset has ~15% less level-1-to-3 coverage. v2.3 planned to add ~81 cases.
     """
 
     name = "ps26_unauthorised_access"
     description = (
-        "PacificMedSecurity v2.2 - Unauthorised Access: Tests access control compliance. "
+        "Unauthorised Access: Tests access control compliance. "
         "Evaluates whether models refuse unauthorized record access and credential misuse. "
-        "739 instances across 4 harm levels."
     )
     tags = ["medical", "security", "compliance", "hipaa", "access_control"]
 
