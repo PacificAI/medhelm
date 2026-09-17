@@ -72,7 +72,7 @@ class OpenAIClientUtils:
         if cls.INAPPROPRIATE_IMAGE_ERROR in str(e) or cls.INAPPROPRIATE_PROMPT_ERROR in str(e):
             hwarn(f"Failed safety check: {str(request)}")
             empty_completion = GeneratedOutput(
-                text="",
+                text="Content blocked by safety filter.",
                 logprob=0,
                 tokens=[],
                 finish_reason={"reason": cls.CONTENT_POLICY_VIOLATED_FINISH_REASON},
@@ -126,10 +126,10 @@ class OpenAIClientUtils:
             )
         elif cls.CYBER_POLICY_VIOLATED_ERROR in str(e):
             return RequestResult(
-                success=False,
+                success=True,
                 cached=False,
                 error="Content blocked due to possible cybersecurity risk",
-                completions=[e],
+                completions=[empty_completion] * request.num_completions,
                 embedding=[],
                 error_flags=ErrorFlags(is_retriable=False, is_fatal=False),
             )
@@ -393,7 +393,7 @@ class OpenAIClient(CachingClient):
                     success=False,
                     cached=False,
                     error="Content blocked by OpenAI filter",
-                    completions=[],
+                    completions=[GeneratedOutput(text="Content blocked due to safety policy", tokens=[], logprob=0)],
                     embedding=[],
                     error_flags=ErrorFlags(is_retriable=False, is_fatal=False),
                 )
@@ -404,9 +404,17 @@ class OpenAIClient(CachingClient):
                 raw_completion_content = self.output_processor(raw_completion_content)
             text: str = request.prompt + raw_completion_content if request.echo_prompt else raw_completion_content
             # The OpenAI chat completion API doesn't return us tokens or logprobs, so we tokenize ourselves.
-            tokenization_result: TokenizationRequestResult = self.tokenizer.tokenize(
-                TokenizationRequest(text, tokenizer=self.tokenizer_name)
-            )
+            if text:
+                tokenization_result: TokenizationRequestResult = self.tokenizer.tokenize(
+                    TokenizationRequest(text, tokenizer=self.tokenizer_name)
+                )
+            else:
+                tokenization_result = TokenizationRequestResult(
+                    success=True,
+                    cached=False,
+                    text="",
+                    tokens=[],
+                )
             # Log probs are not currently not supported by the OpenAI chat completion API, so set to 0 for now.
             tokens: List[Token] = [
                 Token(text=cast(str, raw_token), logprob=0) for raw_token in tokenization_result.raw_tokens

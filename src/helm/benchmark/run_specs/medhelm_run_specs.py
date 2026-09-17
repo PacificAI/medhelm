@@ -2022,7 +2022,7 @@ def get_ps26_breach_response_spec(data_path: Optional[str] = None, jury_config_p
                 "default_score": 0,
             },
         )
-    ] + get_basic_metric_specs([])
+    ]
 
     return RunSpec(
         name="ps26_breach_response",
@@ -2075,7 +2075,7 @@ def get_ps26_control_evasion_spec(data_path: Optional[str] = None, jury_config_p
                 "default_score": 0,
             },
         )
-    ] + get_basic_metric_specs([])
+    ]
 
     return RunSpec(
         name="ps26_control_evasion",
@@ -2128,7 +2128,7 @@ def get_ps26_data_theft_spec(data_path: Optional[str] = None, jury_config_path: 
                 "default_score": 0,
             },
         )
-    ] + get_basic_metric_specs([])
+    ]
 
     return RunSpec(
         name="ps26_data_theft",
@@ -2183,7 +2183,7 @@ def get_ps26_unauthorised_access_spec(
                 "default_score": 0,
             },
         )
-    ] + get_basic_metric_specs([])
+    ]
 
     return RunSpec(
         name="ps26_unauthorised_access",
@@ -2238,7 +2238,7 @@ def get_ps26_consumer_health_data_spec(
                 "default_score": 0,
             },
         )
-    ] + get_basic_metric_specs([])
+    ]
 
     return RunSpec(
         name="ps26_consumer_health_data",
