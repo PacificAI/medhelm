@@ -72,6 +72,7 @@
           <li><a href="/importing_custom_modules" class="">Importing Custom Modules</a></li>
           <li><a href="/adding_new_models" class="">Adding New Models</a></li>
           <li><a href="/adding_new_scenarios" class="">Adding New Scenarios</a></li>
+          <li><a href="/health_admin_bench" class="is-active">HealthAdminBench</a></li>
           <li><a href="/adding_new_tokenizers" class="">Adding New Tokenizers</a></li>
           <li><a href="/downloading_raw_results" class="">Downloading Raw Results</a></li>
           <li><a href="/reproducing_leaderboards" class="">Reproducing Leaderboards</a></li>
@@ -118,28 +119,28 @@
 
 <p>Paper: <a href="https://arxiv.org/abs/2604.09937">HealthAdminBench (Bedi et al., 2026)</a>. Upstream harness: <a href="https://github.com/som-shahlab/health-admin-bench">som-shahlab/health-admin-bench</a>.</p>
 
-<p>This page covers how to <strong>clone the PacificAI forks</strong>, <strong>set the HAB path</strong>, <strong>install dependencies</strong>, and <strong>run</strong> the scenario with <code class="language-plaintext highlighter-rouge">medhelm-run</code>. For general MedHELM install, see <a href="/installation">Installation</a> and <a href="/quick_start">Quick Start</a>. API keys: <a href="/credentials">Credentials</a>.</p>
+<p>This page covers how to <strong>clone MedHELM and HealthAdminBench</strong>, <strong>set the HAB path</strong>, <strong>install dependencies</strong>, and <strong>run</strong> the scenario with <code class="language-plaintext highlighter-rouge">medhelm-run</code>. For general MedHELM install, see <a href="/installation">Installation</a> and <a href="/quick_start">Quick Start</a>. API keys: <a href="/credentials">Credentials</a>.</p>
 
 <h2 id="what-medhelm-runs">What MedHELM runs</h2>
 
 <p>One MedHELM instance is one Playwright episode. The adapter routes the outer request to the internal deployment <code class="language-plaintext highlighter-rouge">hab/harness</code>. OpenAI-chat-compatible <code class="language-plaintext highlighter-rouge">model_deployment</code>s run as <code class="language-plaintext highlighter-rouge">HelmBackedAgent</code> (each browser step is an inner <code class="language-plaintext highlighter-rouge">AutoClient</code> request). Native HAB agents (RandomAgent, Claude, Gemini) stay an override in <code class="language-plaintext highlighter-rouge">health_admin_bench_model_map.yaml</code>. The model completion is HAB <code class="language-plaintext highlighter-rouge">EvaluationResult</code> JSON. The leaderboard metric is <code class="language-plaintext highlighter-rouge">health_admin_bench_score</code> (subeval points / max, 0–1), under <strong>Administration and Workflow</strong>.</p>
 
-<h2 id="get-the-code-pacificai-forks">Get the code (PacificAI forks)</h2>
+<h2 id="get-the-code">Get the code</h2>
 
-<p>You need <strong>two</strong> checkouts next to each other: MedHELM and HealthAdminBench. Use the PacificAI forks (this is where the MedHELM integration lives). Do not use the HAB upstream alone — MedHELM needs in-process hooks (<code class="language-plaintext highlighter-rouge">run_task(agent=..., llm_complete=...)</code>) that are on the fork.</p>
+<p>You need <strong>two</strong> checkouts next to each other: MedHELM and HealthAdminBench. Clone HAB from <a href="https://github.com/som-shahlab/health-admin-bench">som-shahlab/health-admin-bench</a> (<code class="language-plaintext highlighter-rouge">main</code>). MedHELM calls HAB in-process (<code class="language-plaintext highlighter-rouge">run_task(agent=..., llm_complete=...)</code>).</p>
 
 <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># Parent directory for both repos (adjust as you like)</span>
 <span class="nb">mkdir</span> <span class="nt">-p</span> ~/src <span class="o">&amp;&amp;</span> <span class="nb">cd</span> ~/src
 
 git clone https://github.com/PacificAI/medhelm.git
-git clone https://github.com/PacificAI/health-admin-bench.git
+git clone https://github.com/som-shahlab/health-admin-bench.git
 </code></pre></div></div>
 
 <p>Expected layout:</p>
 
 <div class="language-text highlighter-rouge"><div class="highlight"><pre class="highlight"><code>~/src/
   medhelm/              # PacificAI/medhelm
-  health-admin-bench/   # PacificAI/health-admin-bench
+  health-admin-bench/   # som-shahlab/health-admin-bench
 </code></pre></div></div>
 
 <p>The directories do not have to be siblings, but a single parent folder is easiest. Record the <strong>absolute</strong> path to the HAB checkout; MedHELM will not find task JSON files without it.</p>
@@ -487,7 +488,7 @@ helm-server <span class="nt">--suite</span> &lt;suite&gt; <span class="nt">-o</s
   <tbody>
     <tr>
       <td>Task JSON / <code class="language-plaintext highlighter-rouge">run.py</code> not found</td>
-      <td>Export <code class="language-plaintext highlighter-rouge">HEALTH_ADMIN_BENCH_ROOT</code> or pass <code class="language-plaintext highlighter-rouge">hab_root=</code>. MedHELM also looks at <code class="language-plaintext highlighter-rouge">./health-admin-bench</code> and <code class="language-plaintext highlighter-rouge">../health-admin-bench</code> relative to cwd (not the package install path). Use the PacificAI fork (<code class="language-plaintext highlighter-rouge">main</code>), not the som-shahlab upstream.</td>
+      <td>Export <code class="language-plaintext highlighter-rouge">HEALTH_ADMIN_BENCH_ROOT</code> or pass <code class="language-plaintext highlighter-rouge">hab_root=</code>. MedHELM also looks at <code class="language-plaintext highlighter-rouge">./health-admin-bench</code> and <code class="language-plaintext highlighter-rouge">../health-admin-bench</code> relative to cwd (not the package install path). Clone <a href="https://github.com/som-shahlab/health-admin-bench">som-shahlab/health-admin-bench</a> (<code class="language-plaintext highlighter-rouge">main</code>).</td>
     </tr>
     <tr>
       <td><code class="language-plaintext highlighter-rouge">ModuleNotFoundError: harness</code> / HAB imports</td>
@@ -567,8 +568,8 @@ helm-server <span class="nt">--suite</span> &lt;suite&gt; <span class="nt">-o</s
       <td><code class="language-plaintext highlighter-rouge">git clone https://github.com/PacificAI/medhelm.git</code></td>
     </tr>
     <tr>
-      <td>Clone HAB fork</td>
-      <td><code class="language-plaintext highlighter-rouge">git clone https://github.com/PacificAI/health-admin-bench.git</code></td>
+      <td>Clone HAB</td>
+      <td><code class="language-plaintext highlighter-rouge">git clone https://github.com/som-shahlab/health-admin-bench.git</code></td>
     </tr>
     <tr>
       <td>Point MedHELM at HAB</td>
