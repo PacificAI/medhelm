@@ -123,7 +123,7 @@ Then open http://localhost:8000 in your browser.
 * **Schema:** Task taxonomy + metrics configuration powering `helm-summarize` and the UI.
 * **Release:** The release name of the leaderboard.
 
-HealthAdminBench (computer-use healthcare admin workflows) is a separate scenario from OpenAI HealthBench. See [HealthAdminBench](health_admin_bench.md).
+HealthAdminBench (computer-use healthcare admin workflows) is a separate scenario from OpenAI HealthBench. See [HealthAdminBench](/health_admin_bench).
 
 ---
 

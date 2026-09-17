@@ -7,22 +7,22 @@ HealthAdminBench is a **computer-use** evaluation of healthcare administration w
 
 Paper: [HealthAdminBench (Bedi et al., 2026)](https://arxiv.org/abs/2604.09937). Upstream harness: [som-shahlab/health-admin-bench](https://github.com/som-shahlab/health-admin-bench).
 
-This page covers how to **clone the PacificAI forks**, **set the HAB path**, **install dependencies**, and **run** the scenario with `medhelm-run`. For general MedHELM install, see [Installation](/installation) and [Quick Start](/quick_start). API keys: [Credentials](/credentials).
+This page covers how to **clone MedHELM and HealthAdminBench**, **set the HAB path**, **install dependencies**, and **run** the scenario with `medhelm-run`. For general MedHELM install, see [Installation](/installation) and [Quick Start](/quick_start). API keys: [Credentials](/credentials).
 
 ## What MedHELM runs
 
 One MedHELM instance is one Playwright episode. The adapter routes the outer request to the internal deployment `hab/harness`. OpenAI-chat-compatible `model_deployment`s run as `HelmBackedAgent` (each browser step is an inner `AutoClient` request). Native HAB agents (RandomAgent, Claude, Gemini) stay an override in `health_admin_bench_model_map.yaml`. The model completion is HAB `EvaluationResult` JSON. The leaderboard metric is `health_admin_bench_score` (subeval points / max, 0–1), under **Administration and Workflow**.
 
-## Get the code (PacificAI forks)
+## Get the code
 
-You need **two** checkouts next to each other: MedHELM and HealthAdminBench. Use the PacificAI forks (this is where the MedHELM integration lives). Do not use the HAB upstream alone — MedHELM needs in-process hooks (`run_task(agent=..., llm_complete=...)`) that are on the fork.
+You need **two** checkouts next to each other: MedHELM and HealthAdminBench. Clone HAB from [som-shahlab/health-admin-bench](https://github.com/som-shahlab/health-admin-bench) (`main`). MedHELM calls HAB in-process (`run_task(agent=..., llm_complete=...)`).
 
 ```bash
 # Parent directory for both repos (adjust as you like)
 mkdir -p ~/src && cd ~/src
 
 git clone https://github.com/PacificAI/medhelm.git
-git clone https://github.com/PacificAI/health-admin-bench.git
+git clone https://github.com/som-shahlab/health-admin-bench.git
 ```
 
 Expected layout:
@@ -30,7 +30,7 @@ Expected layout:
 ```text
 ~/src/
   medhelm/              # PacificAI/medhelm
-  health-admin-bench/   # PacificAI/health-admin-bench
+  health-admin-bench/   # som-shahlab/health-admin-bench
 ```
 
 The directories do not have to be siblings, but a single parent folder is easiest. Record the **absolute** path to the HAB checkout; MedHELM will not find task JSON files without it.
@@ -296,7 +296,7 @@ helm-server --suite <suite> -o ./benchmark_output --port 8000
 
 | Symptom | Fix |
 | --- | --- |
-| Task JSON / `run.py` not found | Export `HEALTH_ADMIN_BENCH_ROOT` or pass `hab_root=`. MedHELM also looks at `./health-admin-bench` and `../health-admin-bench` relative to cwd (not the package install path). Use the PacificAI fork (`main`), not the som-shahlab upstream. |
+| Task JSON / `run.py` not found | Export `HEALTH_ADMIN_BENCH_ROOT` or pass `hab_root=`. MedHELM also looks at `./health-admin-bench` and `../health-admin-bench` relative to cwd (not the package install path). Clone [som-shahlab/health-admin-bench](https://github.com/som-shahlab/health-admin-bench) (`main`). |
 | `ModuleNotFoundError: harness` / HAB imports | `uv pip install -e "$HEALTH_ADMIN_BENCH_ROOT"` into the MedHELM venv. |
 | Playwright browser missing | `source .venv/bin/activate && python -m playwright install chromium` (MedHELM venv). |
 | `The api_key client option must be set` / `openaiApiKey should be specified` | HelmBackedAgent reads `prod_env/credentials.conf`, not HAB `.env`. Match the key to the deployment prefix (`openaiApiKey`, `azureApiKey`, `stanfordhealthcareApiKey`). |
@@ -318,7 +318,7 @@ helm-server --suite <suite> -o ./benchmark_output --port 8000
 | Step | Command |
 | --- | --- |
 | Clone MedHELM | `git clone https://github.com/PacificAI/medhelm.git` |
-| Clone HAB fork | `git clone https://github.com/PacificAI/health-admin-bench.git` |
+| Clone HAB | `git clone https://github.com/som-shahlab/health-admin-bench.git` |
 | Point MedHELM at HAB | `export HEALTH_ADMIN_BENCH_ROOT=/absolute/path/to/health-admin-bench` |
 | Install HAB | `cd "$HEALTH_ADMIN_BENCH_ROOT" && uv sync && uv run hab install` |
 | Install MedHELM extra | `uv pip install -e ".[health-admin-bench]" && uv pip install -e "$HEALTH_ADMIN_BENCH_ROOT"` |
