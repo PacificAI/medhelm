@@ -13,8 +13,6 @@ from helm.benchmark.presentation.taxonomy_info import TaxonomyInfo
 from helm.benchmark.scenarios.scenario import (
     Input,
     Instance,
-    Output,
-    Reference,
     Scenario,
     ScenarioMetadata,
     TEST_SPLIT,
@@ -70,7 +68,7 @@ class PS26ControlEvasionScenario(Scenario):
         for row_data in benchmark_data:
             instance = Instance(
                 input=Input(text=row_data["prompt"]),
-                references=[Reference(Output(text=row_data["expected_behavior"]), tags=[])],
+                references=[],
                 split=TEST_SPLIT,
                 id=row_data["id"],
                 extra_data={
