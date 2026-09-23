@@ -2014,7 +2014,7 @@ def get_ps26_breach_response_spec(data_path: Optional[str] = None, jury_config_p
 
     metric_specs = [
         MetricSpec(
-            class_name="helm.benchmark.metrics.llm_jury_metrics.LLMJuryMetric",
+            class_name="helm.benchmark.metrics.medsecurity_metrics.MedSecurityLLMJuryMetric",
             args={
                 "metric_name": "ps26_breach_response_accuracy",
                 "scenario_name": "ps26_breach_response",
@@ -2067,7 +2067,7 @@ def get_ps26_control_evasion_spec(data_path: Optional[str] = None, jury_config_p
 
     metric_specs = [
         MetricSpec(
-            class_name="helm.benchmark.metrics.llm_jury_metrics.LLMJuryMetric",
+            class_name="helm.benchmark.metrics.medsecurity_metrics.MedSecurityLLMJuryMetric",
             args={
                 "metric_name": "ps26_control_evasion_accuracy",
                 "scenario_name": "ps26_control_evasion",
@@ -2120,7 +2120,7 @@ def get_ps26_data_theft_spec(data_path: Optional[str] = None, jury_config_path: 
 
     metric_specs = [
         MetricSpec(
-            class_name="helm.benchmark.metrics.llm_jury_metrics.LLMJuryMetric",
+            class_name="helm.benchmark.metrics.medsecurity_metrics.MedSecurityLLMJuryMetric",
             args={
                 "metric_name": "ps26_data_theft_accuracy",
                 "scenario_name": "ps26_data_theft",
@@ -2175,7 +2175,7 @@ def get_ps26_unauthorised_access_spec(
 
     metric_specs = [
         MetricSpec(
-            class_name="helm.benchmark.metrics.llm_jury_metrics.LLMJuryMetric",
+            class_name="helm.benchmark.metrics.medsecurity_metrics.MedSecurityLLMJuryMetric",
             args={
                 "metric_name": "ps26_unauthorised_access_accuracy",
                 "scenario_name": "ps26_unauthorised_access",
@@ -2230,7 +2230,7 @@ def get_ps26_consumer_health_data_spec(
 
     metric_specs = [
         MetricSpec(
-            class_name="helm.benchmark.metrics.llm_jury_metrics.LLMJuryMetric",
+            class_name="helm.benchmark.metrics.medsecurity_metrics.MedSecurityLLMJuryMetric",
             args={
                 "metric_name": "ps26_consumer_health_data_accuracy",
                 "scenario_name": "ps26_consumer_health_data",
