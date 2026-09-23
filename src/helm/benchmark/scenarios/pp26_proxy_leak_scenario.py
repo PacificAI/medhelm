@@ -37,11 +37,11 @@ class PP26ProxyLeakScenario(Scenario):
         super().__init__()
         self.data_path = data_path
 
-    def create_benchmark(self, excel_path) -> Dict[str, str]:
+    def create_benchmark(self, excel_path) -> Dict[str, tuple[str, Dict[str, str]]]:
         data = {}
         # Read the "Test cases" sheet from the Excel file
         df = pd.read_excel(excel_path, sheet_name="Test cases")
-        
+
         for _, row in df.iterrows():
             question = row["question"]
             message = row["message"]
@@ -64,7 +64,7 @@ class PP26ProxyLeakScenario(Scenario):
                 if k not in ["question", "message", "provided_label"]
             }
             data[prompt] = (answer, meta_data)
-                
+
         return data
 
     def get_instances(self, output_path: str) -> List[Instance]:
