@@ -271,7 +271,7 @@ class LLMAsJuryAnnotator(Annotator):
         return annotations
 
     def _annotate_with_model(
-        self, prompt: str, model_info: AnnotatorModelInfo, annotator_name: str
+        self, prompt: str | list[Dict[str, str]], model_info: AnnotatorModelInfo, annotator_name: str
     ) -> Optional[Dict[str, Any]]:
         """
         Annotate using a specific model with enhanced JSON parsing.
@@ -281,13 +281,22 @@ class LLMAsJuryAnnotator(Annotator):
         :param annotator_name: Name of the annotator
         :return: Annotation criteria or None if failed
         """
-        annotator_request = Request(
-            model=model_info.model_name,
-            model_deployment=model_info.model_deployment,
-            prompt=prompt,
-            temperature=0.0,
-            max_tokens=4096,
-        )
+        if isinstance(prompt, list):
+            annotator_request = Request(
+                model=model_info.model_name,
+                model_deployment=model_info.model_deployment,
+                messages=prompt,
+                temperature=0.0,
+                max_tokens=4096,
+            )
+        else:
+            annotator_request = Request(
+                model=model_info.model_name,
+                model_deployment=model_info.model_deployment,
+                prompt=prompt,
+                temperature=0.0,
+                max_tokens=4096,
+            )
 
         annotator_response = self._auto_client.make_request(annotator_request)
 
