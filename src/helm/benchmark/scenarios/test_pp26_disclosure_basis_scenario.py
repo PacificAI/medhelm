@@ -1,7 +1,7 @@
 """
 Test cases for PP26 Disclosure Basis Scenario.
 
-Tests whether LLMs can determine the legal basis for disclosure of patient 
+Tests whether LLMs can determine the legal basis for disclosure of patient
 health information under HIPAA, 42 CFR Part 2, and state privacy laws.
 """
 
@@ -11,7 +11,7 @@ from unittest.mock import patch
 import pandas as pd
 
 from helm.benchmark.scenarios.pp26_disclosure_basis_scenario import PP26DisclosureBasisScenario
-from helm.benchmark.scenarios.scenario import CORRECT_TAG, TEST_SPLIT
+from helm.benchmark.scenarios.scenario import CORRECT_TAG
 
 
 @pytest.mark.scenarios

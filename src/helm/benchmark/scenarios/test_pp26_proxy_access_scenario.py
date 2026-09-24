@@ -1,7 +1,7 @@
 """
 Test cases for PP26 Proxy Access Scenario.
 
-Tests whether LLMs can determine appropriate proxy access permissions to patient 
+Tests whether LLMs can determine appropriate proxy access permissions to patient
 portal messages under HIPAA, state privacy laws, and clinical context.
 """
 
@@ -11,7 +11,7 @@ from unittest.mock import patch
 import pandas as pd
 
 from helm.benchmark.scenarios.pp26_proxy_access_scenario import PP26ProxyAccessScenario
-from helm.benchmark.scenarios.scenario import CORRECT_TAG, TEST_SPLIT
+from helm.benchmark.scenarios.scenario import CORRECT_TAG
 
 
 @pytest.mark.scenarios

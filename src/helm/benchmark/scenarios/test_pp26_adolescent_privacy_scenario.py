@@ -1,7 +1,7 @@
 """
 Test cases for PP26 Adolescent Privacy Scenario.
 
-Tests whether LLMs can determine privacy rights and parental notification 
+Tests whether LLMs can determine privacy rights and parental notification
 requirements for adolescent patients under HIPAA and state-specific privacy laws.
 """
 

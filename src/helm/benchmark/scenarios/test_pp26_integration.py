@@ -1,7 +1,7 @@
 """
 Integration tests for all PP26 healthcare privacy scenarios.
 
-Tests cross-scenario validation and consistency across all PP26 privacy 
+Tests cross-scenario validation and consistency across all PP26 privacy
 and compliance scenarios.
 """
 

@@ -1,8 +1,8 @@
 """
 Test cases for PP26 Proxy Leak Scenario.
 
-Tests whether LLMs can identify privacy risks when proxy account holders access 
-patient portal messages, including risks of unintended disclosure of sensitive 
+Tests whether LLMs can identify privacy risks when proxy account holders access
+patient portal messages, including risks of unintended disclosure of sensitive
 health information.
 """
 
@@ -12,7 +12,7 @@ from unittest.mock import patch
 import pandas as pd
 
 from helm.benchmark.scenarios.pp26_proxy_leak_scenario import PP26ProxyLeakScenario
-from helm.benchmark.scenarios.scenario import CORRECT_TAG, TEST_SPLIT
+from helm.benchmark.scenarios.scenario import CORRECT_TAG
 
 
 @pytest.mark.scenarios
