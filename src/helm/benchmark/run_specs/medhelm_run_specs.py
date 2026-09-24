@@ -1974,3 +1974,99 @@ def get_health_admin_bench_spec(
         metric_specs=metric_specs,
         groups=["health_admin_bench"],
     )
+
+
+@run_spec_function("pp26_disclosure_basis")
+def get_pp26_disclosure_basis_spec(data_path: str) -> RunSpec:
+    scenario_spec = ScenarioSpec(
+        class_name="helm.benchmark.scenarios.pp26_disclosure_basis_scenario.PP26DisclosureBasisScenario",
+        args={"data_path": data_path},
+    )
+
+    adapter_spec = get_multiple_choice_adapter_spec(
+        method=ADAPT_MULTIPLE_CHOICE_JOINT,
+        instructions="Answer A or B or C.",
+        input_noun="",
+        output_noun="",
+        max_train_instances=0,
+    )
+
+    return RunSpec(
+        name="pp26_disclosure_basis",
+        scenario_spec=scenario_spec,
+        adapter_spec=adapter_spec,
+        metric_specs=get_exact_match_metric_specs(),
+        groups=["pp26_disclosure_basis"],
+    )
+
+
+@run_spec_function("pp26_adolescent_privacy")
+def get_pp26_adolescent_privacy_spec(data_path: str) -> RunSpec:
+    scenario_spec = ScenarioSpec(
+        class_name="helm.benchmark.scenarios.pp26_adolescent_privacy_scenario.PP26AdolescentPrivacyScenario",
+        args={"data_path": data_path},
+    )
+
+    adapter_spec = get_multiple_choice_adapter_spec(
+        method=ADAPT_MULTIPLE_CHOICE_JOINT,
+        instructions="Answer A or B.",
+        input_noun="",
+        output_noun="",
+        max_train_instances=0,
+    )
+
+    return RunSpec(
+        name="pp26_adolescent_privacy",
+        scenario_spec=scenario_spec,
+        adapter_spec=adapter_spec,
+        metric_specs=get_exact_match_metric_specs(),
+        groups=["pp26_adolescent_privacy"],
+    )
+
+
+@run_spec_function("pp26_proxy_leak")
+def get_pp26_proxy_leak_spec(data_path: str) -> RunSpec:
+    scenario_spec = ScenarioSpec(
+        class_name="helm.benchmark.scenarios.pp26_proxy_leak_scenario.PP26ProxyLeakScenario",
+        args={"data_path": data_path},
+    )
+
+    adapter_spec = get_multiple_choice_adapter_spec(
+        method=ADAPT_MULTIPLE_CHOICE_JOINT,
+        instructions="Answer A or B.",
+        input_noun="",
+        output_noun="",
+        max_train_instances=0,
+    )
+
+    return RunSpec(
+        name="pp26_proxy_leak",
+        scenario_spec=scenario_spec,
+        adapter_spec=adapter_spec,
+        metric_specs=get_exact_match_metric_specs(),
+        groups=["pp26_proxy_leak"],
+    )
+
+
+@run_spec_function("pp26_proxy_access")
+def get_pp26_proxy_access_spec(data_path: str) -> RunSpec:
+    scenario_spec = ScenarioSpec(
+        class_name="helm.benchmark.scenarios.pp26_proxy_access_scenario.PP26ProxyAccessScenario",
+        args={"data_path": data_path},
+    )
+
+    adapter_spec = get_multiple_choice_adapter_spec(
+        method=ADAPT_MULTIPLE_CHOICE_JOINT,
+        instructions="Answer A or B or C or D.",
+        input_noun="",
+        output_noun="",
+        max_train_instances=0,
+    )
+
+    return RunSpec(
+        name="pp26_proxy_access",
+        scenario_spec=scenario_spec,
+        adapter_spec=adapter_spec,
+        metric_specs=get_exact_match_metric_specs(),
+        groups=["pp26_proxy_access"],
+    )
