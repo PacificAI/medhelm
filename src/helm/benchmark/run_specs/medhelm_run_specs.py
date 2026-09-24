@@ -1979,7 +1979,7 @@ def get_health_admin_bench_spec(
 @run_spec_function("pp26_disclosure_basis")
 def get_pp26_disclosure_basis_spec(data_path: str) -> RunSpec:
     scenario_spec = ScenarioSpec(
-        class_name="helm.benchmark.scenarios.pp26_disclosure_basis_scenario.Pp26DisclosureBasisScenario",
+        class_name="helm.benchmark.scenarios.pp26_disclosure_basis_scenario.PP26DisclosureBasisScenario",
         args={"data_path": data_path},
     )
 
@@ -2003,7 +2003,7 @@ def get_pp26_disclosure_basis_spec(data_path: str) -> RunSpec:
 @run_spec_function("pp26_adolescent_privacy")
 def get_pp26_adolescent_privacy_spec(data_path: str) -> RunSpec:
     scenario_spec = ScenarioSpec(
-        class_name="helm.benchmark.scenarios.pp26_adolescent_privacy_scenario.Pp26AdolescentPrivacyScenario",
+        class_name="helm.benchmark.scenarios.pp26_adolescent_privacy_scenario.PP26AdolescentPrivacyScenario",
         args={"data_path": data_path},
     )
 

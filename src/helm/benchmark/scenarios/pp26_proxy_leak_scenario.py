@@ -1,5 +1,5 @@
 import pandas as pd
-from typing import Dict, List
+from typing import Dict, List, cast
 
 from helm.benchmark.presentation.taxonomy_info import TaxonomyInfo
 from helm.benchmark.scenarios.scenario import (
@@ -44,7 +44,7 @@ class PP26ProxyLeakScenario(Scenario):
         for _, row in df.iterrows():
             question = row["question"]
             message = row["message"]
-            answer = row["provided_label"]
+            answer = cast(str, row["provided_label"]).strip().upper()
             prompt = (
                 "For a clinician's portal message to an adolescent, determine whether a parent with proxy access who reads it "
                 "would learn something about the patient's own sexual health, substance use, mental health, reproductive health, "
