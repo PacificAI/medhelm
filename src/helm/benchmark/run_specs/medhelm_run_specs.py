@@ -1982,11 +1982,11 @@ def get_health_admin_bench_spec(
 
 
 @run_spec_function("ps26_breach_response")
-def get_ps26_breach_response_spec(data_path: Optional[str] = None, jury_config_path: Optional[str] = None) -> RunSpec:
+def get_ps26_breach_response_spec(data_path: str, jury_config_path: str) -> RunSpec:
     """PacificMedSecurity v2.2 - Breach Response scenario."""
     scenario_spec = ScenarioSpec(
         class_name="helm.benchmark.scenarios.ps26_breach_response_scenario.PS26BreachResponseScenario",
-        args={"data_path": data_path} if data_path else {},
+        args={"data_path": data_path},
     )
 
     adapter_spec = get_generation_adapter_spec(
@@ -2035,11 +2035,11 @@ def get_ps26_breach_response_spec(data_path: Optional[str] = None, jury_config_p
 
 
 @run_spec_function("ps26_control_evasion")
-def get_ps26_control_evasion_spec(data_path: Optional[str] = None, jury_config_path: Optional[str] = None) -> RunSpec:
+def get_ps26_control_evasion_spec(data_path: str, jury_config_path: str) -> RunSpec:
     """PacificMedSecurity v2.2 - Control Evasion scenario."""
     scenario_spec = ScenarioSpec(
         class_name="helm.benchmark.scenarios.ps26_control_evasion_scenario.PS26ControlEvasionScenario",
-        args={"data_path": data_path} if data_path else {},
+        args={"data_path": data_path},
     )
 
     adapter_spec = get_generation_adapter_spec(
@@ -2088,11 +2088,11 @@ def get_ps26_control_evasion_spec(data_path: Optional[str] = None, jury_config_p
 
 
 @run_spec_function("ps26_data_theft")
-def get_ps26_data_theft_spec(data_path: Optional[str] = None, jury_config_path: Optional[str] = None) -> RunSpec:
+def get_ps26_data_theft_spec(data_path: str, jury_config_path: str) -> RunSpec:
     """PacificMedSecurity v2.2 - Data Theft scenario."""
     scenario_spec = ScenarioSpec(
         class_name="helm.benchmark.scenarios.ps26_data_theft_scenario.PS26DataTheftScenario",
-        args={"data_path": data_path} if data_path else {},
+        args={"data_path": data_path},
     )
 
     adapter_spec = get_generation_adapter_spec(
@@ -2141,13 +2141,11 @@ def get_ps26_data_theft_spec(data_path: Optional[str] = None, jury_config_path: 
 
 
 @run_spec_function("ps26_unauthorised_access")
-def get_ps26_unauthorised_access_spec(
-    data_path: Optional[str] = None, jury_config_path: Optional[str] = None
-) -> RunSpec:
+def get_ps26_unauthorised_access_spec(data_path: str, jury_config_path: str) -> RunSpec:
     """PacificMedSecurity v2.2 - Unauthorised Access scenario."""
     scenario_spec = ScenarioSpec(
         class_name="helm.benchmark.scenarios.ps26_unauthorised_access_scenario.PS26UnauthorisedAccessScenario",
-        args={"data_path": data_path} if data_path else {},
+        args={"data_path": data_path},
     )
 
     adapter_spec = get_generation_adapter_spec(
@@ -2196,13 +2194,11 @@ def get_ps26_unauthorised_access_spec(
 
 
 @run_spec_function("ps26_consumer_health_data")
-def get_ps26_consumer_health_data_spec(
-    data_path: Optional[str] = None, jury_config_path: Optional[str] = None
-) -> RunSpec:
+def get_ps26_consumer_health_data_spec(data_path: str, jury_config_path: str) -> RunSpec:
     """PacificMedSecurity v2.2 - Consumer Health Data scenario."""
     scenario_spec = ScenarioSpec(
         class_name="helm.benchmark.scenarios.ps26_consumer_health_data_scenario.PS26ConsumerHealthDataScenario",
-        args={"data_path": data_path} if data_path else {},
+        args={"data_path": data_path},
     )
 
     adapter_spec = get_generation_adapter_spec(

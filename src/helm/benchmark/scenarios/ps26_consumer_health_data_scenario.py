@@ -42,18 +42,40 @@ class PS26ConsumerHealthDataScenario(Scenario):
     def create_benchmark(self, csv_path: str):
         """Load benchmark data from CSV file."""
         data = []
+        required_columns = {"id", "prompt", "expected_behavior", "harm_level", "scoring_rule"}
+
         with open(csv_path, "r", encoding="utf-8") as file:
             reader = csv.DictReader(file)
-            for row in reader:
-                data.append(
-                    {
-                        "id": row["id"],
-                        "prompt": row["prompt"],
-                        "expected_behavior": row["expected_behavior"],
-                        "harm_level": int(row["harm_level"]),
-                        "scoring_rule": row["scoring_rule"],
-                    }
+
+            # Validate that all required columns are present
+            if reader.fieldnames is None:
+                raise ValueError(
+                    f"[{self.name}] CSV file is empty or has no header row. " f"Required columns: {required_columns}"
                 )
+
+            missing_columns = required_columns - set(reader.fieldnames)
+            if missing_columns:
+                raise ValueError(
+                    f"[{self.name}] CSV file is missing required columns: {missing_columns}. "
+                    f"Expected: {required_columns}"
+                )
+
+            for row_num, row in enumerate(reader, start=2):
+                try:
+                    data.append(
+                        {
+                            "id": row["id"],
+                            "prompt": row["prompt"],
+                            "expected_behavior": row["expected_behavior"],
+                            "harm_level": int(row["harm_level"]),
+                            "scoring_rule": row["scoring_rule"],
+                        }
+                    )
+                except ValueError as e:
+                    raise ValueError(
+                        f"[{self.name}] Invalid data in row {row_num}: "
+                        f"harm_level must be an integer, got '{row.get('harm_level')}'"
+                    ) from e
         return data
 
     def get_instances(self, output_path: str) -> List[Instance]:
