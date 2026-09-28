@@ -1,6 +1,6 @@
 """Unit tests for MedSecurityLLMJuryMetric."""
 
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 from unittest.mock import MagicMock
 
 from pytest import approx
@@ -38,7 +38,7 @@ class TestMedSecurityLLMJuryMetric:
             default_score=0.0,
         )
 
-    def _create_request_state(self, annotations: Dict[str, Any], scenario_name: str = None) -> RequestState:
+    def _create_request_state(self, annotations: Dict[str, Any], scenario_name: Optional[str] = None) -> RequestState:
         """Create a RequestState with the given annotations."""
         if scenario_name is None:
             scenario_name = self.scenario_name
