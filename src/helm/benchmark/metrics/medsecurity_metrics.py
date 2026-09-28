@@ -53,7 +53,7 @@ class MedSecurityLLMJuryMetric(LLMJuryMetric):
             if annotation_key in self.annotator_models.keys() and annotation_dict is not None:
                 for val in annotation_dict.values():
                     # Skip UNSCORABLE classifications from the average
-                    if val.get("classification") != "UNSCORABLE":
+                    if val.get("classification") != "UNSCORABLE" or float(val["score"]) != -1.0:
                         scores.append(float(val["score"]))
 
         if scores:
