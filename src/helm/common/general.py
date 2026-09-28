@@ -254,13 +254,28 @@ def parallel_map(process: Callable[[InT], OutT], items: List[InT], parallelism: 
     """
     A wrapper for applying `process` to all `items`.
     """
+    process_module = getattr(process, "__module__", type(process).__module__)
+    from helm.benchmark.runner import get_current_run_path
+    from helm.benchmark.utils import ProgressFile
+
+    # Only write progress to the file for the specific type -> helm.benchmark.executor
+    if process_module == "helm.benchmark.executor":
+        run_path = get_current_run_path()
+        if run_path is None:
+            fp = None
+        else:
+            task_status_file = os.path.join(run_path, "task_status.txt")
+            fp = ProgressFile(task_status_file)
+    else:
+        fp = None
+
     with htrack_block(f"Parallelizing computation on {len(items)} items over {parallelism} threads"):
         results: List
         if parallelism == 1:
-            results = list(tqdm(map(process, items), total=len(items), disable=None))
+            results = list(tqdm(map(process, items), total=len(items), file=fp))
         else:
             with ThreadPoolExecutor(max_workers=parallelism) as executor:
-                results = list(tqdm(executor.map(process, items), total=len(items), disable=None))
+                results = list(tqdm(executor.map(process, items), total=len(items), file=fp))
     return results
 
 
