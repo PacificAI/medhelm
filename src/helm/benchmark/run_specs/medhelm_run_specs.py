@@ -32,6 +32,7 @@ from helm.benchmark.metrics.common_metric_specs import (
 from helm.benchmark.metrics.metric import MetricSpec
 from helm.benchmark.run_spec import RunSpec, run_spec_function
 from helm.benchmark.run_specs.medhelm.benchmark_config import get_benchmark_config_from_path
+from helm.benchmark.run_specs.medsecurity import create_ps26_spec
 from helm.benchmark.scenarios.scenario import ScenarioSpec
 from helm.common.gpu_utils import get_torch_device_name
 
@@ -1974,3 +1975,43 @@ def get_health_admin_bench_spec(
         metric_specs=metric_specs,
         groups=["health_admin_bench"],
     )
+
+
+# ============================================================================
+# PS26 MedSecurity Benchmarks
+# ============================================================================
+
+
+@run_spec_function("ps26_breach_response")
+def get_ps26_breach_response_spec(data_path: str, jury_config_path: str) -> RunSpec:
+    """PacificMedSecurity - Breach Response scenario."""
+    annotator_models = get_annotator_models_from_config(jury_config_path)
+    return create_ps26_spec("ps26_breach_response", data_path, annotator_models)
+
+
+@run_spec_function("ps26_control_evasion")
+def get_ps26_control_evasion_spec(data_path: str, jury_config_path: str) -> RunSpec:
+    """PacificMedSecurity - Control Evasion scenario."""
+    annotator_models = get_annotator_models_from_config(jury_config_path)
+    return create_ps26_spec("ps26_control_evasion", data_path, annotator_models)
+
+
+@run_spec_function("ps26_data_theft")
+def get_ps26_data_theft_spec(data_path: str, jury_config_path: str) -> RunSpec:
+    """PacificMedSecurity - Data Theft scenario."""
+    annotator_models = get_annotator_models_from_config(jury_config_path)
+    return create_ps26_spec("ps26_data_theft", data_path, annotator_models)
+
+
+@run_spec_function("ps26_unauthorised_access")
+def get_ps26_unauthorised_access_spec(data_path: str, jury_config_path: str) -> RunSpec:
+    """PacificMedSecurity - Unauthorised Access scenario."""
+    annotator_models = get_annotator_models_from_config(jury_config_path)
+    return create_ps26_spec("ps26_unauthorised_access", data_path, annotator_models)
+
+
+@run_spec_function("ps26_consumer_health_data")
+def get_ps26_consumer_health_data_spec(data_path: str, jury_config_path: str) -> RunSpec:
+    """PacificMedSecurity - Consumer Health Data scenario."""
+    annotator_models = get_annotator_models_from_config(jury_config_path)
+    return create_ps26_spec("ps26_consumer_health_data", data_path, annotator_models)

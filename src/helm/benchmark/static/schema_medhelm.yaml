@@ -323,6 +323,36 @@ metrics:
     description: Number of browser actions taken during a HealthAdminBench episode.
     lower_is_better: true
 
+  # PS26 MedSecurity Jury Metrics
+  - name: ps26_breach_response_accuracy
+    display_name: PS26 Breach Response Jury Score
+    short_display_name: Jury Score
+    description: Measures the average score assigned by an LLM-based jury evaluating PS26 model compliance with HIPAA breach notification procedures.
+    lower_is_better: false
+
+  - name: ps26_control_evasion_accuracy
+    display_name: PS26 Control Evasion Jury Score
+    short_display_name: Jury Score
+    description: Measures the average score assigned by an LLM-based jury evaluating PS26 model compliance with HIPAA security controls.
+    lower_is_better: false
+
+  - name: ps26_data_theft_accuracy
+    display_name: PS26 Data Theft Jury Score
+    short_display_name: Jury Score
+    description: Measures the average score assigned by an LLM-based jury evaluating PS26 model refusal of data theft and ransomware requests.
+    lower_is_better: false
+
+  - name: ps26_unauthorised_access_accuracy
+    display_name: PS26 Unauthorised Access Jury Score
+    short_display_name: Jury Score
+    description: Measures the average score assigned by an LLM-based jury evaluating PS26 model refusal of unauthorized record access.
+    lower_is_better: false
+
+  - name: ps26_consumer_health_data_accuracy
+    display_name: PS26 Consumer Health Data Jury Score
+    short_display_name: Jury Score
+    description: Measures the average score assigned by an LLM-based jury evaluating PS26 model compliance with consumer privacy laws.
+    lower_is_better: false
 
   # Summariazation metrics
   - name: summac
@@ -538,6 +568,7 @@ run_groups:
       - patient_communication
       - medical_research
       - administration_and_workflow
+      - ps26_medsecurity
 
   - name: clinical_decision_support
     display_name: Clinical Decision Support
@@ -614,6 +645,17 @@ run_groups:
       - synt_family_disclosure
       - synt_right_of_access
       - synt_written_consent
+  
+  - name: ps26_medsecurity
+    display_name: PacificMedSecurity
+    description: Scenarios for evaluating compliance with PacificMedSecurity v2.2 standards
+    category: Healthcare Task Categories
+    subgroups:
+      - ps26_breach_response
+      - ps26_control_evasion
+      - ps26_data_theft
+      - ps26_unauthorised_access
+      - ps26_consumer_health_data
 
   - name: sct_bench
     display_name: SCT-Bench
@@ -1403,4 +1445,90 @@ run_groups:
       what: Verify presence and validity of written consent for medical procedures or information sharing
       who: Clinician, Legal Compliance Officer
       when: Pre-procedure or prior to information sharing
+      language: English
+
+  # PS26 MedSecurity Benchmarks (PacificMedSecurity v2.2)
+  - name: ps26_breach_response
+    display_name: PS26 Breach Response
+    description: PacificMedSecurity v2.2 - Breach Response tests model compliance with HIPAA 45 CFR 164.402-414 breach notification requirements (396 instances, 4 harm levels).
+    metric_groups:
+      - accuracy
+      - efficiency
+      - general_information
+    environment:
+      main_name: ps26_breach_response_accuracy
+      main_split: test
+    taxonomy:
+      task: Compliance Evaluation
+      what: Evaluate model compliance with HIPAA breach notification procedures
+      who: Healthcare administrator, security officer, regulator
+      when: When evaluating healthcare security compliance
+      language: English
+
+  - name: ps26_control_evasion
+    display_name: PS26 Control Evasion
+    description: PacificMedSecurity v2.2 - Control Evasion tests model compliance with HIPAA 45 CFR 164.312 security controls (497 instances, 4 harm levels).
+    metric_groups:
+      - accuracy
+      - efficiency
+      - general_information
+    environment:
+      main_name: ps26_control_evasion_accuracy
+      main_split: test
+    taxonomy:
+      task: Compliance Evaluation
+      what: Evaluate model compliance with HIPAA security controls
+      who: Security engineer, IT administrator, compliance officer
+      when: When evaluating healthcare security safeguards
+      language: English
+
+  - name: ps26_data_theft
+    display_name: PS26 Data Theft
+    description: PacificMedSecurity v2.2 - Data Theft tests model refusal of data theft and ransomware requests (544 instances, 4 harm levels).
+    metric_groups:
+      - accuracy
+      - efficiency
+      - general_information
+    environment:
+      main_name: ps26_data_theft_accuracy
+      main_split: test
+    taxonomy:
+      task: Compliance Evaluation
+      what: Evaluate model refusal of data theft, ransomware, and trafficking assistance
+      who: Attacker, insider, security researcher
+      when: When evaluating model security against criminal uses
+      language: English
+
+  - name: ps26_unauthorised_access
+    display_name: PS26 Unauthorised Access
+    description: PacificMedSecurity v2.2 - Unauthorised Access tests model refusal of unauthorized record access (739 instances, 4 harm levels).
+    metric_groups:
+      - accuracy
+      - efficiency
+      - general_information
+    environment:
+      main_name: ps26_unauthorised_access_accuracy
+      main_split: test
+    taxonomy:
+      task: Compliance Evaluation
+      what: Evaluate model refusal of unauthorized medical record access
+      when: When evaluating HIPAA access control compliance
+      who: Healthcare staff, security officer, auditor
+      language: English
+
+  - name: ps26_consumer_health_data
+    display_name: PS26 Consumer Health Data
+    description: PacificMedSecurity v2.2 - Consumer Health Data tests model compliance with consumer privacy laws (CCPA, CPRA) (394 instances, 4 harm levels).
+    metric_groups:
+      - accuracy
+      - efficiency
+      - general_information
+    environment:
+      main_name: ps26_consumer_health_data_accuracy
+      main_split: test
+    taxonomy:
+      task: Compliance Evaluation
+      what: Evaluate model compliance with consumer privacy laws
+      when: When evaluating non-HIPAA consumer health privacy
+      who: Privacy officer, consumer app developer, data broker
       language: English

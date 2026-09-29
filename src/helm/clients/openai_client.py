@@ -64,12 +64,21 @@ class OpenAIClientUtils:
         "See https://labs.openai.com/policies/content-policy for more information."
     )
 
+    # Cyber_policy content safety guidelines error message
+    CYBER_POLICY_VIOLATED_ERROR: str = "This content was flagged for possible cybersecurity risk."
+
     @classmethod
     def handle_openai_error(cls, e: OpenAIError, request: Request):
+        empty_completion = GeneratedOutput(
+            text="Content blocked by safety filter.",
+            logprob=0,
+            tokens=[],
+            finish_reason={"reason": cls.CONTENT_POLICY_VIOLATED_FINISH_REASON},
+        )
         if cls.INAPPROPRIATE_IMAGE_ERROR in str(e) or cls.INAPPROPRIATE_PROMPT_ERROR in str(e):
             hwarn(f"Failed safety check: {str(request)}")
             empty_completion = GeneratedOutput(
-                text="",
+                text="Content blocked by safety filter.",
                 logprob=0,
                 tokens=[],
                 finish_reason={"reason": cls.CONTENT_POLICY_VIOLATED_FINISH_REASON},
@@ -118,6 +127,15 @@ class OpenAIClientUtils:
                 cached=False,
                 error="Grok API error: Content violates usage guidelines",
                 completions=[],
+                embedding=[],
+                error_flags=ErrorFlags(is_retriable=False, is_fatal=False),
+            )
+        elif cls.CYBER_POLICY_VIOLATED_ERROR in str(e):
+            return RequestResult(
+                success=True,
+                cached=False,
+                error="Content blocked due to possible cybersecurity risk",
+                completions=[empty_completion] * request.num_completions,
                 embedding=[],
                 error_flags=ErrorFlags(is_retriable=False, is_fatal=False),
             )
@@ -360,18 +378,19 @@ class OpenAIClient(CachingClient):
         except openai.OpenAIError as e:
             return OpenAIClientUtils.handle_openai_error(e, request)
 
-        if "choices" not in response and response["choices"] is None:
+        if "choices" not in response or response["choices"] is None:
             hexception(ValueError(f"Invalid response from OpenAI API: {response}"))
             return RequestResult(
                 success=False,
                 cached=False,
-                error="Invalid response from OpenAI API: 'choices' field is missing or null",
+                error="Content blocked or Invalid response from OpenAI API: 'choices' field is missing or null",
                 completions=[],
                 embedding=[],
                 error_flags=ErrorFlags(is_retriable=False, is_fatal=False),
             )
 
         completions: List[GeneratedOutput] = []
+
         for raw_completion in response["choices"]:
             # Handle Azure OpenAI content filter
             # See: https://learn.microsoft.com/en-us/azure/ai-services/openai/concepts/content-filter
@@ -381,20 +400,22 @@ class OpenAIClient(CachingClient):
                     success=False,
                     cached=False,
                     error="Content blocked by OpenAI filter",
-                    completions=[],
+                    completions=[GeneratedOutput(text="Content blocked due to safety policy", tokens=[], logprob=0)],
                     embedding=[],
                     error_flags=ErrorFlags(is_retriable=False, is_fatal=False),
                 )
             # The OpenAI chat completion API doesn't support echo.
             # If `echo_prompt` is true, combine the prompt and completion.
-            raw_completion_content = raw_completion["message"]["content"]
+            raw_completion_content = raw_completion["message"]["content"] or ""
             if self.output_processor:
                 raw_completion_content = self.output_processor(raw_completion_content)
             text: str = request.prompt + raw_completion_content if request.echo_prompt else raw_completion_content
             # The OpenAI chat completion API doesn't return us tokens or logprobs, so we tokenize ourselves.
+
             tokenization_result: TokenizationRequestResult = self.tokenizer.tokenize(
                 TokenizationRequest(text, tokenizer=self.tokenizer_name)
             )
+
             # Log probs are not currently not supported by the OpenAI chat completion API, so set to 0 for now.
             tokens: List[Token] = [
                 Token(text=cast(str, raw_token), logprob=0) for raw_token in tokenization_result.raw_tokens
@@ -407,6 +428,7 @@ class OpenAIClient(CachingClient):
                 if "reasoning_content" in raw_completion["message"]
                 else None
             )
+
             completion = GeneratedOutput(
                 text=text,
                 logprob=0,  # OpenAI does not provide logprobs
@@ -414,6 +436,7 @@ class OpenAIClient(CachingClient):
                 finish_reason={"reason": raw_completion["finish_reason"]},
                 thinking=thinking,
             )
+
             completions.append(truncate_sequence(completion, request))  # Truncate the text by stop sequences
 
         return RequestResult(
