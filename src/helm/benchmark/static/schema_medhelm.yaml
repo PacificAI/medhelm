@@ -538,6 +538,7 @@ run_groups:
       - patient_communication
       - medical_research
       - administration_and_workflow
+      - pp26_privacy
 
   - name: clinical_decision_support
     display_name: Clinical Decision Support
@@ -1403,4 +1404,82 @@ run_groups:
       what: Verify presence and validity of written consent for medical procedures or information sharing
       who: Clinician, Legal Compliance Officer
       when: Pre-procedure or prior to information sharing
+      language: English
+
+  - name: pp26_privacy
+    display_name: Pacific Privacy
+    description: Pacific Privacy is a comprehensive privacy benchmark for healthcare. It evaluates models' abilities to understand privacy regulations, identify disclosure scenarios, manage proxy access, and detect privacy risks in clinical documentation.
+    category: Healthcare Task Categories
+    subgroups:
+      - pp26_proxy_access
+      - pp26_proxy_leak
+      - pp26_adolescent_privacy
+      - pp26_disclosure_basis
+
+  - name: pp26_proxy_access
+    display_name: PP26 Proxy Access Control
+    description: PP26 Proxy Access Control evaluates a model's understanding of access rights and responsibilities when third parties (proxies) request patient information. The model must correctly determine whether and how information can be accessed or disclosed based on proxy status, authorization, and regulatory requirements (multiple choice with 4 options).
+    metric_groups:
+      - accuracy
+      - efficiency
+      - general_information
+    environment:
+      main_name: exact_match
+      main_split: test
+    taxonomy:
+      task: Classification
+      what: Determine appropriate access and disclosure permissions for third-party proxy requests
+      who: Clinician, Health Information Manager
+      when: Upon proxy access request
+      language: English
+
+  - name: pp26_proxy_leak
+    display_name: PP26 Proxy Information Leakage
+    description: PP26 Proxy Information Leakage evaluates a model's ability to detect when patient information might be inadvertently disclosed to unauthorized parties, particularly through proxy communications or third-party access scenarios. The model must identify privacy risks in communication and information flow.
+    metric_groups:
+      - accuracy
+      - efficiency
+      - general_information
+    environment:
+      main_name: exact_match
+      main_split: test
+    taxonomy:
+      task: Classification
+      what: Detect potential unauthorized disclosure of patient information through proxy channels
+      who: Clinician, Health Information Manager
+      when: Any
+      language: English
+
+  - name: pp26_adolescent_privacy
+    display_name: PP26 Adolescent Privacy
+    description: PP26 Adolescent Privacy evaluates a model's understanding of privacy rights and disclosure restrictions for adolescent patients. It assesses the model's ability to determine what information can be appropriately shared with parents or guardians based on adolescent confidentiality regulations.
+    metric_groups:
+      - accuracy
+      - efficiency
+      - general_information
+    environment:
+      main_name: exact_match
+      main_split: test
+    taxonomy:
+      task: Classification
+      what: Determine appropriate privacy protections and disclosure permissions for adolescent patients
+      who: Clinician, Legal Compliance Officer
+      when: During family communication
+      language: English
+
+  - name: pp26_disclosure_basis
+    display_name: PP26 Disclosure Basis
+    description: PP26 Disclosure Basis evaluates a model's ability to correctly identify the appropriate legal and regulatory basis for disclosing patient information. The task requires selecting the correct basis for various disclosure scenarios from multiple choice options (A, B, or C).
+    metric_groups:
+      - accuracy
+      - efficiency
+      - general_information
+    environment:
+      main_name: exact_match
+      main_split: test
+    taxonomy:
+      task: Classification
+      what: Identify the appropriate legal basis for patient information disclosure
+      who: Clinician, Legal Compliance Officer
+      when: Prior to information sharing
       language: English

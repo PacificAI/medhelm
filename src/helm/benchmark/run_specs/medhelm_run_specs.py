@@ -1985,9 +1985,9 @@ def get_pp26_disclosure_basis_spec(data_path: str) -> RunSpec:
 
     adapter_spec = get_multiple_choice_adapter_spec(
         method=ADAPT_MULTIPLE_CHOICE_JOINT,
-        instructions="Answer A or B or C.",
+        instructions="",
         input_noun="",
-        output_noun="",
+        output_noun="Answer A or B or C",
         max_train_instances=0,
     )
 
@@ -1996,7 +1996,7 @@ def get_pp26_disclosure_basis_spec(data_path: str) -> RunSpec:
         scenario_spec=scenario_spec,
         adapter_spec=adapter_spec,
         metric_specs=get_exact_match_metric_specs(),
-        groups=["pp26_disclosure_basis"],
+        groups=["pp26_privacy", "pp26_disclosure_basis"],
     )
 
 
@@ -2009,9 +2009,9 @@ def get_pp26_adolescent_privacy_spec(data_path: str) -> RunSpec:
 
     adapter_spec = get_multiple_choice_adapter_spec(
         method=ADAPT_MULTIPLE_CHOICE_JOINT,
-        instructions="Answer A or B.",
+        instructions="",
         input_noun="",
-        output_noun="",
+        output_noun="Answer A or B",
         max_train_instances=0,
     )
 
@@ -2020,7 +2020,7 @@ def get_pp26_adolescent_privacy_spec(data_path: str) -> RunSpec:
         scenario_spec=scenario_spec,
         adapter_spec=adapter_spec,
         metric_specs=get_exact_match_metric_specs(),
-        groups=["pp26_adolescent_privacy"],
+        groups=["pp26_privacy", "pp26_adolescent_privacy"],
     )
 
 
@@ -2033,9 +2033,9 @@ def get_pp26_proxy_leak_spec(data_path: str) -> RunSpec:
 
     adapter_spec = get_multiple_choice_adapter_spec(
         method=ADAPT_MULTIPLE_CHOICE_JOINT,
-        instructions="Answer A or B.",
+        instructions="",
         input_noun="",
-        output_noun="",
+        output_noun="Answer A or B",
         max_train_instances=0,
     )
 
@@ -2044,7 +2044,7 @@ def get_pp26_proxy_leak_spec(data_path: str) -> RunSpec:
         scenario_spec=scenario_spec,
         adapter_spec=adapter_spec,
         metric_specs=get_exact_match_metric_specs(),
-        groups=["pp26_proxy_leak"],
+        groups=["pp26_privacy", "pp26_proxy_leak"],
     )
 
 
@@ -2057,9 +2057,9 @@ def get_pp26_proxy_access_spec(data_path: str) -> RunSpec:
 
     adapter_spec = get_multiple_choice_adapter_spec(
         method=ADAPT_MULTIPLE_CHOICE_JOINT,
-        instructions="Answer A or B or C or D.",
+        instructions="",
         input_noun="",
-        output_noun="",
+        output_noun="Answer A or B or C or D",
         max_train_instances=0,
     )
 
@@ -2068,5 +2068,5 @@ def get_pp26_proxy_access_spec(data_path: str) -> RunSpec:
         scenario_spec=scenario_spec,
         adapter_spec=adapter_spec,
         metric_specs=get_exact_match_metric_specs(),
-        groups=["pp26_proxy_access"],
+        groups=["pp26_privacy", "pp26_proxy_access"],
     )
