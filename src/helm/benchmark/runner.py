@@ -11,6 +11,7 @@ import numpy as np
 
 from tqdm import tqdm
 
+from helm.benchmark.adaptation.adapter_spec import ADAPT_PHYSICIAN_BENCH
 from helm.benchmark.adaptation.request_state import RequestState
 from helm.common.general import ensure_directory_exists, write, asdict_without_nones
 from helm.common.hierarchical_logger import hlog, htrack_block, hwarn
@@ -79,15 +80,22 @@ class RunnerError(Exception):
 def execute_parallelism_for_run(adapter_method: str, requested: int) -> int:
     """Return executor thread count for this run.
 
-    MedHELM `--num-threads` is an in-process `ThreadPoolExecutor`, not HealthAdminBench
-    `--max-parallel`. Playwright + `os.chdir` cannot overlap, so HAB episodes stay serial.
+    MedHELM ``--num-threads`` is an in-process ``ThreadPoolExecutor``.
+    HealthAdminBench uses Playwright, while PhysicianBench uses a Docker FHIR
+    container on a fixed host port and process-global state. Both must run
+    episodes serially.
     """
-    if adapter_method == ADAPT_HEALTH_ADMIN_BENCH and requested != 1:
-        hwarn(
-            "HealthAdminBench uses Playwright, which is not thread-safe; "
-            f"ignoring --num-threads {requested} and running episodes serially."
-        )
+    serial_adapters = {
+        ADAPT_HEALTH_ADMIN_BENCH: ("HealthAdminBench uses Playwright, which is not thread-safe; "),
+        ADAPT_PHYSICIAN_BENCH: (
+            "PhysicianBench uses a Docker FHIR container on a fixed host port, " "which is not thread-safe; "
+        ),
+    }
+
+    if adapter_method in serial_adapters and requested != 1:
+        hwarn(f"{serial_adapters[adapter_method]}" f"ignoring --num-threads {requested} and running episodes serially.")
         return 1
+
     return requested
 
 
@@ -320,8 +328,8 @@ class Runner:
             annotator_specs=run_spec.annotators,
         )
 
-        # Execute (fill up results). HealthAdminBench episodes are Playwright +
-        # os.chdir; MedHELM `--num-threads` is an in-process pool, not HAB `-j`.
+        # Execute (fill up results). PhysicianBench episodes are Docker + chdir;
+        # MedHELM ``--num-threads`` is an in-process pool.
         scenario_state = self._execute_requests(run_spec, scenario_state)
 
         # Annotate (post-process the results)
