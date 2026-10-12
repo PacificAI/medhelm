@@ -14,6 +14,7 @@ import yaml
 from helm.benchmark.adaptation.adapter_spec import (
     ADAPT_MULTIPLE_CHOICE_JOINT,
     ADAPT_CHAT,
+    ADAPT_GENERATION,
     ADAPT_HEALTH_ADMIN_BENCH,
     ADAPT_PHYSICIAN_BENCH,
     AdapterSpec,
@@ -92,6 +93,45 @@ def get_medhelm_configurable_benchmark_spec(config_path: str) -> RunSpec:
         annotators=annotator_specs,
         metric_specs=metric_specs,
         groups=[benchmark_config.name],
+    )
+
+
+@run_spec_function("medrobustness_format")
+def get_medrobustness_format_spec(data_path: str, max_cases: Optional[int] = None) -> RunSpec:
+    scenario_args: Dict[str, Any] = {"data_path": data_path}
+    if max_cases is not None:
+        scenario_args["max_cases"] = max_cases
+    scenario_spec = ScenarioSpec(
+        class_name="helm.benchmark.scenarios.medrobustness.pr26_format_scenario.PR26FormatScenario",
+        args=scenario_args,
+    )
+    adapter_spec = AdapterSpec(
+        method=ADAPT_GENERATION,
+        instructions="",
+        input_prefix="",
+        input_suffix="",
+        output_prefix="",
+        output_suffix="",
+        instance_prefix="",
+        max_train_instances=0,
+        num_outputs=1,
+        max_tokens=5,
+        temperature=0.0,
+        stop_sequences=["\n"],
+    )
+    metric_specs = [
+        MetricSpec(
+            class_name="helm.benchmark.metrics.medrobustness_metrics.MedRobustnessMetric",
+            args={},
+        )
+    ] + get_basic_metric_specs([])
+
+    return RunSpec(
+        name="medrobustness_format",
+        scenario_spec=scenario_spec,
+        adapter_spec=adapter_spec,
+        metric_specs=metric_specs,
+        groups=["clinical", "medrobustness", "medrobustness_format"],
     )
 
 
