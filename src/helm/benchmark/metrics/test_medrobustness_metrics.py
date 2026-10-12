@@ -9,14 +9,16 @@ from helm.benchmark.scenarios.scenario import CORRECT_TAG, TEST_SPLIT, Input, In
 from helm.common.request import GeneratedOutput, Request, RequestResult
 
 
-def _request_state(pair_id: str, arm: str, correct: str, prediction: str) -> RequestState:
+def _request_state(
+    pair_id: str, arm: str, correct: str, prediction: str, scoring_mode: str = "preserve"
+) -> RequestState:
     return RequestState(
         instance=Instance(
             id=f"{pair_id}:{arm}",
             input=Input(text="prompt"),
             references=[Reference(output=Output(text=correct), tags=[CORRECT_TAG])],
             split=TEST_SPLIT,
-            extra_data={"pair_id": pair_id, "arm": arm},
+            extra_data={"pair_id": pair_id, "arm": arm, "scoring_mode": scoring_mode},
         ),
         reference_index=None,
         request_mode=None,
@@ -80,3 +82,56 @@ def test_evaluate_instances_computes_paired_metrics() -> None:
 def test_evaluate_instances_rejects_incomplete_pair() -> None:
     with pytest.raises(ValueError, match="must contain exactly arms A and B"):
         MedRobustnessMetric().evaluate_instances([_request_state("pair-1", "A", "A", "A")], "")
+
+
+def test_invert_pairs_are_scored_per_arm_and_kept_out_of_stability() -> None:
+    request_states = [
+        _request_state("inv-1", "A", "A", "A", "invert"),
+        _request_state("inv-1", "B", "A", "A", "invert"),
+        _request_state("inv-2", "A", "B", "B", "invert"),
+        _request_state("inv-2", "B", "B", "C", "invert"),
+        _request_state("pair-1", "A", "A", "A"),
+        _request_state("pair-1", "B", "A", "B"),
+    ]
+
+    stats = _means(MedRobustnessMetric().evaluate_instances(request_states, ""))
+
+    assert stats["medrobustness_inverted_arm_a_accuracy"] == pytest.approx(1.0)
+    assert stats["medrobustness_inverted_arm_b_accuracy"] == pytest.approx(0.5)
+    assert stats["medrobustness_inversion_rate"] == pytest.approx(0.5)
+    assert stats["medrobustness_fully_correct_rate"] == pytest.approx(0.0)
+    assert stats["medrobustness_asymmetric_failure_rate"] == pytest.approx(1.0)
+    assert stats["medrobustness_accuracy"] == pytest.approx(0.5)
+
+
+def test_control_pairs_give_noise_floor_only() -> None:
+    request_states = [
+        _request_state("ctl-1", "A", "A", "A", "control"),
+        _request_state("ctl-1", "B", "A", "B", "control"),
+        _request_state("ctl-2", "A", "B", "B", "control"),
+        _request_state("ctl-2", "B", "B", "B", "control"),
+        _request_state("ctl-3", "A", "C", "A", "control"),
+        _request_state("ctl-3", "B", "C", "no answer", "control"),
+    ]
+
+    stats = _means(MedRobustnessMetric().evaluate_instances(request_states, ""))
+
+    assert stats["medrobustness_control_failure_rate"] == pytest.approx(0.5)
+    assert set(stats) == {"medrobustness_control_failure_rate"}
+
+
+def test_evaluate_instances_rejects_conflicting_modes_within_pair() -> None:
+    request_states = [
+        _request_state("pair-1", "A", "A", "A", "preserve"),
+        _request_state("pair-1", "B", "A", "A", "invert"),
+    ]
+    with pytest.raises(ValueError, match="conflicting scoring modes"):
+        MedRobustnessMetric().evaluate_instances(request_states, "")
+
+
+def test_evaluate_instances_rejects_unknown_scoring_mode() -> None:
+    with pytest.raises(ValueError, match="Invalid pairing metadata"):
+        MedRobustnessMetric().evaluate_instances(
+            [_request_state("pair-1", "A", "A", "A", "abstain"), _request_state("pair-1", "B", "A", "A", "abstain")],
+            "",
+        )

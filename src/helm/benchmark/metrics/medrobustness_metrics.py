@@ -11,6 +11,7 @@ from helm.benchmark.scenarios.scenario import CORRECT_TAG
 
 
 _ANSWER_PATTERN = re.compile(r"(?<![A-Za-z])[A-G](?![A-Za-z])", re.IGNORECASE)
+SCORING_MODES = ("preserve", "invert", "control")
 
 
 def parse_medrobustness_answer(response: str) -> str:
@@ -34,7 +35,12 @@ class _ArmResult:
 
 
 class MedRobustnessMetric(EvaluateInstancesMetric):
-    """Scores absolute accuracy and paired stability for PacificMedRobustness."""
+    """Scores PacificMedRobustness pairs by their `scoring_mode`, following the pilot-3 scorer.
+
+    - preserve: paired stability (both arms should give the same correct answer).
+    - invert: per-arm accuracy and inversion rate (both arms correct).
+    - control: noise floor, the rate at which a whitespace-only change flips a correct arm A answer.
+    """
 
     @staticmethod
     def _get_arm_result(request_state: RequestState) -> _ArmResult:
@@ -58,20 +64,29 @@ class MedRobustnessMetric(EvaluateInstancesMetric):
             correct_letter=correct_references[0].output.text.strip().upper(),
         )
 
+    @staticmethod
+    def _get_pair_info(request_state: RequestState) -> tuple:
+        extra_data = request_state.instance.extra_data
+        if not extra_data:
+            raise ValueError(f"Missing pairing metadata for instance '{request_state.instance.id}'")
+        pair_id = str(extra_data.get("pair_id", "")).strip()
+        arm = str(extra_data.get("arm", "")).strip().upper()
+        scoring_mode = str(extra_data.get("scoring_mode", "preserve")).strip().lower()
+        if not pair_id or arm not in {"A", "B"} or scoring_mode not in SCORING_MODES:
+            raise ValueError(f"Invalid pairing metadata for instance '{request_state.instance.id}'")
+        return pair_id, arm, scoring_mode
+
     def evaluate_instances(self, request_states: List[RequestState], eval_cache_path: str) -> List[Stat]:
         del eval_cache_path
         pairs: Dict[str, Dict[str, _ArmResult]] = {}
+        pair_modes: Dict[str, str] = {}
 
         for request_state in request_states:
-            extra_data = request_state.instance.extra_data
-            if not extra_data:
-                raise ValueError(f"Missing pairing metadata for instance '{request_state.instance.id}'")
-            pair_id = str(extra_data.get("pair_id", "")).strip()
-            arm = str(extra_data.get("arm", "")).strip().upper()
-            if not pair_id or arm not in {"A", "B"}:
-                raise ValueError(f"Invalid pairing metadata for instance '{request_state.instance.id}'")
+            pair_id, arm, scoring_mode = self._get_pair_info(request_state)
             if arm in pairs.setdefault(pair_id, {}):
                 raise ValueError(f"Duplicate arm {arm} for pair '{pair_id}'")
+            if pair_modes.setdefault(pair_id, scoring_mode) != scoring_mode:
+                raise ValueError(f"Pair '{pair_id}' has conflicting scoring modes")
             pairs[pair_id][arm] = self._get_arm_result(request_state)
 
         stats = {
@@ -88,6 +103,10 @@ class MedRobustnessMetric(EvaluateInstancesMetric):
                 "medrobustness_failed_non_letter_rate",
                 "medrobustness_recovery_rate",
                 "medrobustness_letter_change_rate",
+                "medrobustness_inverted_arm_a_accuracy",
+                "medrobustness_inverted_arm_b_accuracy",
+                "medrobustness_inversion_rate",
+                "medrobustness_control_failure_rate",
             ]
         }
 
@@ -95,89 +114,129 @@ class MedRobustnessMetric(EvaluateInstancesMetric):
             if set(arms) != {"A", "B"}:
                 raise ValueError(f"Pair '{pair_id}' must contain exactly arms A and B; found {sorted(arms)}")
             arm_a, arm_b = arms["A"], arms["B"]
+            mode = pair_modes[pair_id]
 
-            for arm, result in (("a", arm_a), ("b", arm_b)):
-                stats["medrobustness_accuracy"].add(result.correct)
-                stats[f"medrobustness_arm_{arm}_accuracy"].add(result.correct)
-                stats["medrobustness_non_letter_rate"].add(result.non_letter)
-                stats[f"medrobustness_arm_{arm}_non_letter_rate"].add(result.non_letter)
-
-            stats["medrobustness_fully_correct_rate"].add(arm_a.correct and arm_b.correct)
-            stats["medrobustness_letter_change_rate"].add(arm_a.prediction != arm_b.prediction)
-            if arm_a.correct:
-                stats["medrobustness_asymmetric_failure_rate"].add(not arm_b.correct and not arm_b.non_letter)
-                stats["medrobustness_failed_non_letter_rate"].add(arm_b.non_letter)
+            if mode == "preserve":
+                self._add_preserve_stats(stats, arm_a, arm_b)
+            elif mode == "invert":
+                stats["medrobustness_inverted_arm_a_accuracy"].add(arm_a.correct)
+                stats["medrobustness_inverted_arm_b_accuracy"].add(arm_b.correct)
+                stats["medrobustness_inversion_rate"].add(arm_a.correct and arm_b.correct)
             else:
-                stats["medrobustness_recovery_rate"].add(arm_b.correct)
+                if arm_a.correct:
+                    stats["medrobustness_control_failure_rate"].add(not arm_b.correct and not arm_b.non_letter)
 
         return [stat for stat in stats.values() if stat.count > 0]
+
+    @staticmethod
+    def _add_preserve_stats(stats: Dict[str, Stat], arm_a: _ArmResult, arm_b: _ArmResult) -> None:
+        for arm, result in (("a", arm_a), ("b", arm_b)):
+            stats["medrobustness_accuracy"].add(result.correct)
+            stats[f"medrobustness_arm_{arm}_accuracy"].add(result.correct)
+            stats["medrobustness_non_letter_rate"].add(result.non_letter)
+            stats[f"medrobustness_arm_{arm}_non_letter_rate"].add(result.non_letter)
+
+        stats["medrobustness_fully_correct_rate"].add(arm_a.correct and arm_b.correct)
+        stats["medrobustness_letter_change_rate"].add(arm_a.prediction != arm_b.prediction)
+        if arm_a.correct:
+            stats["medrobustness_asymmetric_failure_rate"].add(not arm_b.correct and not arm_b.non_letter)
+            stats["medrobustness_failed_non_letter_rate"].add(arm_b.non_letter)
+        else:
+            stats["medrobustness_recovery_rate"].add(arm_b.correct)
 
     def get_metadata(self) -> List[MetricMetadata]:
         return [
             MetricMetadata(
                 name="medrobustness_accuracy",
                 display_name="Overall accuracy",
-                description="Accuracy across both arms.",
+                description="Accuracy across both arms of preserve pairs.",
                 lower_is_better=False,
             ),
             MetricMetadata(
                 name="medrobustness_arm_a_accuracy",
                 display_name="Arm A accuracy",
-                description="Accuracy on the baseline arm.",
+                description="Accuracy on the baseline arm of preserve pairs.",
                 lower_is_better=False,
             ),
             MetricMetadata(
                 name="medrobustness_arm_b_accuracy",
                 display_name="Arm B accuracy",
-                description="Accuracy on the transformed arm.",
+                description="Accuracy on the transformed arm of preserve pairs.",
                 lower_is_better=False,
             ),
             MetricMetadata(
                 name="medrobustness_non_letter_rate",
                 display_name="Non-letter rate",
-                description="Rate of responses that do not identify exactly one answer from A to G.",
+                description="Rate of preserve-pair responses that do not identify exactly one answer from A to G.",
                 lower_is_better=True,
             ),
             MetricMetadata(
                 name="medrobustness_arm_a_non_letter_rate",
                 display_name="Arm A non-letter rate",
-                description="Non-letter response rate on the baseline arm.",
+                description="Non-letter response rate on the baseline arm of preserve pairs.",
                 lower_is_better=True,
             ),
             MetricMetadata(
                 name="medrobustness_arm_b_non_letter_rate",
                 display_name="Arm B non-letter rate",
-                description="Non-letter response rate on the transformed arm.",
+                description="Non-letter response rate on the transformed arm of preserve pairs.",
                 lower_is_better=True,
             ),
             MetricMetadata(
                 name="medrobustness_fully_correct_rate",
                 display_name="Fully correct pair rate",
-                description="Rate of pairs for which both arms are answered correctly.",
+                description="Rate of preserve pairs for which both arms are answered correctly.",
                 lower_is_better=False,
             ),
             MetricMetadata(
                 name="medrobustness_asymmetric_failure_rate",
                 display_name="Asymmetric failure rate",
-                description="Among pairs with a correct arm A, rate of valid but incorrect arm B answers.",
+                description="Among preserve pairs with a correct arm A, rate of valid but incorrect arm B answers.",
                 lower_is_better=True,
             ),
             MetricMetadata(
                 name="medrobustness_failed_non_letter_rate",
                 display_name="Arm B non-letter failure rate",
-                description="Among pairs with a correct arm A, rate of non-letter arm B responses.",
+                description="Among preserve pairs with a correct arm A, rate of non-letter arm B responses.",
                 lower_is_better=True,
             ),
             MetricMetadata(
                 name="medrobustness_recovery_rate",
                 display_name="Recovery rate",
-                description="Among pairs with an incorrect arm A, rate for which arm B is correct.",
+                description="Among preserve pairs with an incorrect arm A, rate for which arm B is correct.",
                 lower_is_better=None,
             ),
             MetricMetadata(
                 name="medrobustness_letter_change_rate",
                 display_name="Letter change rate",
-                description="Rate of pairs for which the predicted letter changes between arms.",
+                description="Rate of preserve pairs for which the predicted letter changes between arms.",
+                lower_is_better=True,
+            ),
+            MetricMetadata(
+                name="medrobustness_inverted_arm_a_accuracy",
+                display_name="Inverted pairs arm A accuracy",
+                description="Accuracy on the baseline arm of invert pairs (opposite finding).",
+                lower_is_better=False,
+            ),
+            MetricMetadata(
+                name="medrobustness_inverted_arm_b_accuracy",
+                display_name="Inverted pairs arm B accuracy",
+                description="Accuracy on the transformed arm of invert pairs (opposite finding).",
+                lower_is_better=False,
+            ),
+            MetricMetadata(
+                name="medrobustness_inversion_rate",
+                display_name="Inversion rate",
+                description="Rate of invert pairs for which both arms are answered correctly.",
+                lower_is_better=False,
+            ),
+            MetricMetadata(
+                name="medrobustness_control_failure_rate",
+                display_name="Control failure rate",
+                description=(
+                    "Noise floor: among control pairs with a correct arm A, rate of valid but incorrect arm B "
+                    "answers after whitespace-only changes."
+                ),
                 lower_is_better=True,
             ),
         ]
