@@ -9,7 +9,7 @@ Upstream: [github.com/scaleapi/clinicare](https://github.com/scaleapi/clinicare)
 
 ## What MedHELM runs
 
-One MedHELM instance is one CliniCARE task, and one request is one full agent episode. Like HealthAdminBench, CliniCARE stays a separate project: MedHELM wraps it, and never imports its code.
+One MedHELM instance is one CliniCARE task, and one request is one full agent episode. CliniCARE stays a separate project: MedHELM wraps it, and never imports its code.
 
 ```
 medhelm-run clinicare:model=<model>
@@ -161,7 +161,7 @@ CliniCARE task ids are a hash of case parameters and **identify the patient** to
 | Codex `invalid_encrypted_content` on the second turn | A load-balancing gateway split the model across deployments. Set `CODEX_PIN_DEPLOYMENT` in CliniCARE's `.env` (see `codex_mcp_fix.py`). |
 | A re-run never retries a dead case | Harbor keeps finished trials, failed ones included. Delete that case's job dir under `jobs/medhelm/` to re-run it. |
 | `run_case failed ... built from a different version of task` or `harbor refused the job` | The jobs dir holds results from an older CliniCARE or task build. Use a fresh `jobs_dir=` (or delete the old one) and re-run. |
-| Cases fail with 401s although CliniCARE's `.env` has the right key | A variable exported in your shell wins over `.env` (as for HealthAdminBench). Unset `OPENAI_API_KEY` / `*_BASE_URL` in the shell that runs `medhelm-run`, or make them match. |
+| Cases fail with 401s although CliniCARE's `.env` has the right key | A variable exported in your shell wins over `.env`. Unset `OPENAI_API_KEY` / `*_BASE_URL` in the shell that runs `medhelm-run`, or make them match. |
 
 ## Summary
 
