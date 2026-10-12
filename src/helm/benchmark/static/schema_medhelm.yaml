@@ -356,7 +356,7 @@ metrics:
   - name: clinicare_process_score
     display_name: CliniCARE Process Score
     short_display_name: Process
-    description: LLM-judged process rubric score (did the investigation follow the scenario's required steps). Present only for graded runs; never blended into the CliniCARE Score.
+    description: LLM-judged process rubric score from 0 to 1 (did the investigation follow the scenario's required steps). Present only for graded runs; never blended into the CliniCARE Score.
     lower_is_better: false
 
   - name: clinicare_policy_support

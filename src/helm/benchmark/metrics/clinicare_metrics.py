@@ -31,6 +31,10 @@ OFFLINE_KEYS: Dict[str, str] = {
     "policy_citation_support_rate": "clinicare_policy_support",
 }
 
+# reward.json stores process_pct as a percent (0-100) and every other key as a fraction (0-1).
+# Scale it to a fraction so all CliniCARE columns share one scale.
+SCALE: Dict[str, float] = {"process_pct": 0.01}
+
 
 def _payload(request_state: RequestState) -> Optional[Dict[str, Any]]:
     result = request_state.result
@@ -42,7 +46,11 @@ def _payload(request_state: RequestState) -> Optional[Dict[str, Any]]:
 def _stats(reward: Optional[Dict[str, Any]], keys: Dict[str, str]) -> List[Stat]:
     if not reward:
         return []
-    return [Stat(MetricName(name)).add(float(reward[key])) for key, name in keys.items() if reward.get(key) is not None]
+    return [
+        Stat(MetricName(name)).add(float(reward[key]) * SCALE.get(key, 1.0))
+        for key, name in keys.items()
+        if reward.get(key) is not None
+    ]
 
 
 class CliniCAREOutcomeMetric(Metric):
@@ -109,7 +117,7 @@ class CliniCAREOfflineMetric(Metric):
                 name="clinicare_process_score",
                 display_name="CliniCARE process score",
                 short_display_name="Process",
-                description="LLM-judged process rubric (did the investigation follow the scenario's steps).",
+                description="LLM-judged process rubric, 0-1 (did the investigation follow the scenario's steps).",
                 lower_is_better=False,
                 group="accuracy",
             ),
