@@ -37,7 +37,7 @@ def _trial(
         "config": {"agent": {"name": "pkg:Agent", "model_name": model}},
         "agent_info": {"version": "1.0"},
         "verifier_result": {"rewards": {"reward": 1.0}} if verified else None,
-        "exception_info": {"exception_type": exc} if exc else None,
+        "exception_info": {"exception_type": exc, "exception_message": "boom"} if exc else None,
     }
     (trial / "result.json").write_text(json.dumps(result))
     if verified:
@@ -64,7 +64,7 @@ def _fresh_client_state(monkeypatch):
     # build); give every test a clean run.
     monkeypatch.setattr(CliniCAREClient, "_replay_index", {})
     monkeypatch.setattr(CliniCAREClient, "_docker_checked", False)
-    monkeypatch.setattr(CliniCAREClient, "_warned_ungraded", False)
+    monkeypatch.setattr(CliniCAREClient, "_warned", set())
 
 
 @pytest.fixture(autouse=True)
@@ -90,6 +90,7 @@ def _fake_run_case(
     trial: Optional[Path] = None,
     stderr: str = "",
     graded: Optional[bool] = None,
+    grading: Optional[Dict[str, Any]] = None,
 ) -> List[List[str]]:
     calls: List[List[str]] = []
 
@@ -98,6 +99,8 @@ def _fake_run_case(
         report: Dict[str, Any] = {"status": "ok", "trial_dir": str(trial)}
         if graded is not None:
             report["graded"] = graded
+        if grading is not None:
+            report["grading"] = grading
         stdout = json.dumps(report) + "\n" if trial else ""
         return subprocess.CompletedProcess(cmd, returncode, stdout=stdout, stderr=stderr)
 
@@ -323,58 +326,238 @@ def _warnings(monkeypatch) -> List[str]:
     return seen
 
 
-def test_live_grade_requested_but_not_graded_warns_once(monkeypatch, live_root, tmp_path):
-    _fake_run_case(monkeypatch, trial=_trial(tmp_path / "jobs" / "j", TASK), graded=False)
+def _judge(outcome: str, reason: str, detail: Optional[str] = None) -> Dict[str, Any]:
+    return {"outcome": outcome, "reason": reason, "detail": detail}
+
+
+SCORED = _judge("scored", "scored")
+NO_KEYS = _judge("failed", "judge_credentials_missing", "JUDGE_BASE_URL, JUDGE_API_KEY not set")
+
+
+def _live(monkeypatch, live_root, tmp_path, *, reward=None, grading=None, graded=None, exc=None, grade=True):
+    trial = _trial(tmp_path / "jobs" / "j", TASK, reward=reward, exc=exc)
+    _fake_run_case(monkeypatch, trial=trial, grading=grading, graded=graded)
+    warnings = _warnings(monkeypatch)
+    knobs = {"clinicare_root": str(live_root), **({"grade": True} if grade else {})}
+    payload = _payload(CliniCAREClient().make_request(_request(**knobs)))
+    return payload, warnings, trial
+
+
+def test_live_missing_judge_keys_warn_once_as_a_credentials_problem(monkeypatch, live_root, tmp_path):
+    _fake_run_case(
+        monkeypatch,
+        trial=_trial(tmp_path / "jobs" / "j", TASK),
+        graded=False,
+        grading={"process": NO_KEYS, "policy": NO_KEYS},
+    )
     warnings = _warnings(monkeypatch)
     client = CliniCAREClient()
     for _ in range(3):  # three ungraded cases in one run -> one warning, three counted in the stat
         payload = _payload(client.make_request(_request(clinicare_root=str(live_root), grade=True)))
         assert (payload["grade_requested"], payload["graded"]) == (True, False)
         assert payload["reward"]["score"] == 1.0  # the deterministic score is kept
-    assert len(warnings) == 1 and "JUDGE_BASE_URL" in warnings[0]
+    assert len(warnings) == 1
+    assert (
+        warnings[0].startswith("CliniCARE [credentials] judge credentials are missing")
+        and "JUDGE_API_KEY" in warnings[0]
+    )
 
 
-def test_live_graded_case_does_not_warn(monkeypatch, live_root, tmp_path):
-    _fake_run_case(monkeypatch, trial=_trial(tmp_path / "jobs" / "j", TASK, reward=GRADED_REWARD), graded=True)
-    warnings = _warnings(monkeypatch)
-    payload = _payload(CliniCAREClient().make_request(_request(clinicare_root=str(live_root), grade=True)))
-    assert (payload["grade_requested"], payload["graded"]) == (True, True)
-    assert warnings == []
+@pytest.mark.parametrize(
+    "process,tag,points_to",
+    [
+        (
+            _judge("failed", "judge_credentials_rejected", "AuthenticationError: Error code: 401"),
+            "[credentials] the judge API rejected the judge key",
+            "JUDGE_API_KEY",
+        ),
+        (
+            _judge("failed", "judge_error", "RateLimitError: Error code: 429"),
+            "[judge] the process judge failed",
+            "verifier/process.json",
+        ),
+        (_judge("failed", "no_rubrics"), "[task build] the process judge found no usable rubric bundle", "verifier/"),
+        (
+            _judge("failed", "judge_script_failed", "exit 1, no process_summary.json"),
+            "[judge] the process judge did not finish",
+            ".log",
+        ),
+    ],
+)
+def test_live_each_judge_failure_names_its_cause(monkeypatch, live_root, tmp_path, process, tag, points_to):
+    payload, warnings, _ = _live(
+        monkeypatch, live_root, tmp_path, graded=False, grading={"process": process, "policy": SCORED}
+    )
+    assert payload["graded"] is False
+    assert len(warnings) == 1 and warnings[0].startswith(f"CliniCARE {tag}") and points_to in warnings[0]
 
 
-def test_live_without_grade_never_warns(monkeypatch, live_root, tmp_path):
-    _fake_run_case(monkeypatch, trial=_trial(tmp_path / "jobs" / "j", TASK), graded=False)
-    warnings = _warnings(monkeypatch)
-    payload = _payload(CliniCAREClient().make_request(_request(clinicare_root=str(live_root))))
-    assert payload["grade_requested"] is False
-    assert warnings == []
-
-
-def test_live_older_run_case_without_graded_flag_falls_back_to_reward(monkeypatch, live_root, tmp_path):
-    _fake_run_case(monkeypatch, trial=_trial(tmp_path / "jobs" / "j", TASK, reward=GRADED_REWARD))  # no flag
-    payload = _payload(CliniCAREClient().make_request(_request(clinicare_root=str(live_root), grade=True)))
-    assert payload["graded"] is True
-
-
-def test_live_previously_graded_case_counts_as_graded(monkeypatch, live_root, tmp_path):
-    # This run's judges failed (e.g. keys now missing), but an earlier run already graded the case:
-    # the judged columns are filled, so no warning.
-    _fake_run_case(monkeypatch, trial=_trial(tmp_path / "jobs" / "j", TASK, reward=GRADED_REWARD), graded=False)
-    warnings = _warnings(monkeypatch)
-    payload = _payload(CliniCAREClient().make_request(_request(clinicare_root=str(live_root), grade=True)))
+@pytest.mark.parametrize("policy", [_judge("skipped", "policy_off"), _judge("skipped", "no_policy_rubrics")])
+def test_live_by_design_skips_are_graded_and_silent(monkeypatch, live_root, tmp_path, policy):
+    payload, warnings, _ = _live(
+        monkeypatch, live_root, tmp_path, graded=True, grading={"process": SCORED, "policy": policy}
+    )
     assert payload["graded"] is True and warnings == []
 
 
-@pytest.mark.parametrize("reward,graded", [({"score": 1.0}, False), (GRADED_REWARD, True)])
-def test_replay_grade_requested_checks_the_reward(monkeypatch, tmp_path, reward, graded):
+def test_live_no_report_is_an_agent_problem_not_a_grading_one(monkeypatch, live_root, tmp_path):
+    no_report = _judge("skipped", "no_report")
+    payload, warnings, trial = _live(
+        monkeypatch,
+        live_root,
+        tmp_path,
+        reward={"score": 0.0, "report_present": 0},
+        graded=True,
+        grading={"process": no_report, "policy": no_report},
+    )
+    assert payload["graded"] is True
+    assert len(warnings) == 1 and warnings[0].startswith("CliniCARE [agent] the agent finished without writing")
+    assert f"{trial}/agent/" in warnings[0]
+
+
+def test_live_previously_graded_case_counts_as_graded(monkeypatch, live_root, tmp_path):
+    # This run's judges failed (the keys are now missing), but an earlier run already wrote both
+    # judges' scores: the judged columns are filled, so no warning.
+    payload, warnings, _ = _live(
+        monkeypatch,
+        live_root,
+        tmp_path,
+        reward=GRADED_REWARD,
+        graded=False,
+        grading={"process": NO_KEYS, "policy": NO_KEYS},
+    )
+    assert payload["graded"] is True and warnings == []
+
+
+@pytest.mark.parametrize("reward,graded_flag,graded", [(GRADED_REWARD, None, True), (None, False, False)])
+def test_live_older_run_case_without_grading_report(monkeypatch, live_root, tmp_path, reward, graded_flag, graded):
+    payload, warnings, _ = _live(monkeypatch, live_root, tmp_path, reward=reward, graded=graded_flag)
+    assert payload["graded"] is graded
+    assert (warnings == []) is graded
+    if not graded:
+        assert "does not report why" in warnings[0]
+
+
+def test_live_without_grade_never_warns_about_grading(monkeypatch, live_root, tmp_path):
+    payload, warnings, _ = _live(monkeypatch, live_root, tmp_path, graded=False, grade=False)
+    assert payload["grade_requested"] is False and warnings == []
+
+
+@pytest.mark.parametrize(
+    "exc,reward,tag,points_to",
+    [
+        ("NonZeroAgentExitCodeError", None, "[agent] the agent raised NonZeroAgentExitCodeError: boom", "/agent/"),
+        (
+            None,
+            {"score": 0.0, "evidence_calls_auth_error": 4},
+            "[credentials] 4 MIMIC tool call(s) were rejected",
+            "MIMIC_API_SECRET",
+        ),
+        (None, {"score": 1.0, "environment_degraded": 1}, "[environment] the agent reported a degraded", "report.md"),
+    ],
+)
+def test_scored_trial_problems_name_their_cause(monkeypatch, live_root, tmp_path, exc, reward, tag, points_to):
+    _, warnings, _ = _live(monkeypatch, live_root, tmp_path, reward=reward, exc=exc, grade=False)
+    assert len(warnings) == 1 and warnings[0].startswith(f"CliniCARE {tag}") and points_to in warnings[0]
+
+
+@pytest.mark.parametrize(
+    "verified,reward,tag",
+    [
+        (
+            True,
+            {"score": 0.0, "judge_failed": 1, "rubrics_load_failed": 1},
+            "[task build] the verifier could not load this task's rubric bundle",
+        ),
+        (
+            True,
+            {"score": 0.0, "judge_failed": 1, "judge_launch_failed": 1},
+            "[environment] the verifier could not start its judge",
+        ),
+        (False, None, "[environment] harbor recorded no verifier result (RuntimeError: boom)"),
+    ],
+)
+def test_dead_trial_error_names_the_part_that_failed(monkeypatch, live_root, tmp_path, verified, reward, tag):
+    trial = _trial(
+        tmp_path / "jobs" / "j", TASK, verified=verified, reward=reward, exc=None if verified else "RuntimeError"
+    )
+    _fake_run_case(monkeypatch, trial=trial)
+    result = CliniCAREClient().make_request(_request(clinicare_root=str(live_root)))
+    assert not result.success and result.error is not None
+    assert result.error.startswith(f"CliniCARE {tag}") and str(trial) in result.error
+
+
+def test_timeout_error_names_the_job_log(monkeypatch, live_root):
+    def timeout(cmd, timeout, **kwargs):
+        raise subprocess.TimeoutExpired(cmd, timeout)
+
+    monkeypatch.setattr(clinicare_client, "require_docker", lambda: None)
+    monkeypatch.setattr(clinicare_client, "run_in_process_group", timeout)
+    result = CliniCAREClient().make_request(_request(clinicare_root=str(live_root), case_timeout_sec=60))
+    assert result.error is not None and result.error.startswith("CliniCARE [timeout]")
+    assert (
+        "case_timeout_sec=60s" in result.error
+        and job_name("codex-gptx", TASK, live_root / "benchmark" / "tasks") + ".log" in result.error
+    )
+
+
+def _replay(tmp_path, monkeypatch, *, reward=None, summaries=(), record=None):
     tasks = _tasks(tmp_path, TASK)
-    _trial(tmp_path / "job", TASK, reward=reward)
+    trial = _trial(tmp_path / "job", TASK, reward=reward)
+    for name in summaries:
+        (tmp_path / "job" / name).write_text("{}")
+    if record is not None:
+        (trial / "verifier" / "process.json").write_text(json.dumps(record))
     warnings = _warnings(monkeypatch)
     result = CliniCAREClient().make_request(_request(job_dir=str(tmp_path / "job"), tasks_dir=str(tasks), grade=True))
-    assert _payload(result)["graded"] is graded
-    assert len(warnings) == (0 if graded else 1)
-    if not graded:
-        assert "Replay only reads results" in warnings[0]
+    return _payload(result), warnings
+
+
+BOTH_SUMMARIES = ("process_summary.json", "policy_support_summary.json")
+
+
+def test_replay_graded_job_is_graded(monkeypatch, tmp_path):
+    payload, warnings = _replay(tmp_path, monkeypatch, reward=GRADED_REWARD, summaries=BOTH_SUMMARIES)
+    assert payload["graded"] is True and warnings == []
+
+
+def test_replay_never_graded_job_says_so(monkeypatch, tmp_path):
+    payload, warnings = _replay(tmp_path, monkeypatch, reward={"score": 1.0})
+    assert payload["graded"] is False
+    assert len(warnings) == 1 and warnings[0].startswith("CliniCARE [judge] this replayed job was never graded")
+
+
+def test_replay_rejected_judge_key_is_a_credentials_problem(monkeypatch, tmp_path):
+    payload, warnings = _replay(
+        tmp_path,
+        monkeypatch,
+        reward={"score": 1.0, "policy_support_judged": 1},
+        summaries=BOTH_SUMMARIES,
+        record={"error": "AuthenticationError: Error code: 401 - invalid key"},
+    )
+    assert payload["graded"] is False
+    assert len(warnings) == 1 and warnings[0].startswith("CliniCARE [credentials] the judge API rejected")
+
+
+def test_replay_nothing_to_score_is_graded(monkeypatch, tmp_path):
+    # The judges ran over the job and left no record for this trial (e.g. a policy-off task).
+    payload, warnings = _replay(
+        tmp_path, monkeypatch, reward={"score": 1.0, "process_pct": 50.0}, summaries=BOTH_SUMMARIES
+    )
+    assert payload["graded"] is True and warnings == []
+
+
+def test_different_problems_each_warn_once(monkeypatch, live_root, tmp_path):
+    trial = _trial(
+        tmp_path / "jobs" / "j", TASK, reward={"score": 0.0, "report_present": 0, "evidence_calls_auth_error": 2}
+    )
+    _fake_run_case(monkeypatch, trial=trial, graded=False, grading={"process": NO_KEYS, "policy": NO_KEYS})
+    warnings = _warnings(monkeypatch)
+    client = CliniCAREClient()
+    for _ in range(3):
+        client.make_request(_request(clinicare_root=str(live_root), grade=True))
+    tags = sorted(w.split("]")[0] + "]" for w in warnings)
+    assert tags == ["CliniCARE [agent]", "CliniCARE [credentials]", "CliniCARE [credentials]"]
 
 
 def test_warning_and_docker_check_are_shared_across_client_instances(monkeypatch, live_root, tmp_path):

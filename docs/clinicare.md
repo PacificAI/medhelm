@@ -108,7 +108,20 @@ Check `stats.json`: `clinicare_tool_calls` > 0 and `clinicare_evidence_calls_aut
 
 `clinicare_score` and the other deterministic metrics come from the in-container verifier and need no judge. `grade=true` additionally runs CliniCARE's LLM judges after each case. That fills `clinicare_process_score` and `clinicare_policy_support`. Both are reported separately and never blended into the main score, and both are absent when grading did not run.
 
-If `grade=true` was requested but a case comes back ungraded (most often missing `JUDGE_BASE_URL` / `JUDGE_API_KEY` in CliniCARE's `.env`), the case keeps its score and the run continues. MedHELM logs one warning and counts the case in `clinicare_grading_failed`, so a run whose judged columns are partly empty is visible. A case already graded by an earlier run counts as graded. In replay mode MedHELM runs no judges, so a job must be graded in CliniCARE first.
+If `grade=true` was requested but a judge could not score a case, the case keeps its score, the run continues, and the case counts in `clinicare_grading_failed`. A judge skipping a case by design (no report, a policy-off task, no rubrics of that kind) is not a failure. A case already graded by an earlier run counts as graded. In replay mode MedHELM runs no judges, so a job must be graded in CliniCARE first.
+
+## Warnings
+
+Every CliniCARE warning and per-case error starts with a tag that says which kind of problem it is, then names what to check and the file to open. Each kind is logged once per run, naming the first case; `stats.json` has the counts.
+
+| tag | meaning | where to look |
+| --- | --- | --- |
+| `[credentials]` | A key is missing or was rejected: the judge keys (`JUDGE_BASE_URL`, `JUDGE_API_KEY`) or the MIMIC tools (`MIMIC_API_SECRET`) | CliniCARE's `.env` |
+| `[agent]` | The model's own behaviour: the agent raised an error, or finished without a report | the trial's `agent/` dir and `trial.log` |
+| `[judge]` | An LLM judge failed for a reason other than its key (rate limit, timeout, malformed reply), or a replayed job was never graded | the trial's `verifier/process.json` or `policy_support.json`, or the case's job log |
+| `[task build]` | The built task is incomplete: no usable rubric bundle | the trial's `verifier/`; rebuild the tasks |
+| `[environment]` | The container, harness or tools failed: no verifier result, the verifier could not start its judge, or the agent reported a degraded environment | the trial's `trial.log`, `result.json` and `verifier/test-stdout.txt` |
+| `[timeout]` | The case ran past `case_timeout_sec` and was stopped | the case's job log under `jobs/medhelm/` |
 
 ## Run-spec arguments
 
@@ -156,7 +169,7 @@ CliniCARE task ids are a hash of case parameters and **identify the patient** to
 | `has no scripts/run_case.py` | Update the CliniCARE checkout. |
 | `No CliniCARE system for model ...` | Add the model to `clinicare_model_map.yaml`. |
 | Every case scores 0 with zero tool calls | The MIMIC sidecar did not start. Check `MIMIC_DATA_ROOT` and `MIMIC_API_SECRET` in CliniCARE's `.env`. |
-| Warning: `grade=true was requested but a case was not graded` | The judges could not run. Set `JUDGE_BASE_URL` and `JUDGE_API_KEY` in CliniCARE's `.env`. The judge's own error is in the case's job log under `jobs/medhelm/`. |
+| A `[credentials]`, `[agent]`, `[judge]`, `[task build]`, `[environment]` or `[timeout]` warning | See [Warnings](#warnings). |
 | Codex trials die with `403 Forbidden` from a gateway | The gateway does not accept the Codex client. Use a gateway that does, or a different system. |
 | Codex `invalid_encrypted_content` on the second turn | A load-balancing gateway split the model across deployments. Set `CODEX_PIN_DEPLOYMENT` in CliniCARE's `.env` (see `codex_mcp_fix.py`). |
 | A re-run never retries a dead case | Harbor keeps finished trials, failed ones included. Delete that case's job dir under `jobs/medhelm/` to re-run it. |

@@ -14,9 +14,9 @@ CLINICARE_RUN_CASE = "scripts/run_case.py"
 # that flags only the secondary process pass.
 VERIFIER_FAILED_KEYS = ("rubrics_load_failed", "judge_launch_failed")
 
-# Keys CliniCARE's LLM judges add to reward.json (process.py and policy_support.py --amend-reward).
-# A case counts as graded only when both judges have written theirs.
-GRADED_KEYS = ("process_pct", "policy_support_judged")
+# What the openai SDK raises when CliniCARE's judge API refuses the key (401 / 403); mirrors
+# run_case.py. The judges record an error as "<ExceptionType>: <message>", so only the type is matched.
+REJECTED_KEY_ERRORS = ("AuthenticationError", "PermissionDeniedError")
 
 # Gold verdicts as they appear in the cohort bundle's expected_label column.
 VERDICT_LABELS = (

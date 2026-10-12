@@ -24,7 +24,7 @@ import yaml
 from helm.benchmark.scenarios.clinicare_constants import (
     CLINICARE_PROTOCOL,
     CLINICARE_RUN_CASE,
-    GRADED_KEYS,
+    REJECTED_KEY_ERRORS,
     VERIFIER_FAILED_KEYS,
 )
 from helm.benchmark.scenarios.clinicare_scenario import resolve_clinicare_root, resolve_tasks_dir
@@ -99,7 +99,8 @@ def read_trial(trial_dir: Path) -> Dict[str, Any]:
     reward_path = trial_dir / "verifier" / "reward.json"
     verified = bool((result.get("verifier_result") or {}).get("rewards")) and reward_path.is_file()
     reward = json.loads(reward_path.read_text(encoding="utf-8")) if verified else None
-    if reward is not None and any(reward.get(key) == 1 for key in VERIFIER_FAILED_KEYS):
+    verifier_failure = next((k for k in VERIFIER_FAILED_KEYS if (reward or {}).get(k) == 1), None)
+    if verifier_failure:
         verified, reward = False, None  # the verifier failed before scoring: its 0.0 is not a verdict
     exception = result.get("exception_info") or {}
     report = trial_dir / "verifier" / "report.md"
@@ -111,14 +112,180 @@ def read_trial(trial_dir: Path) -> Dict[str, Any]:
         "model_name": agent.get("model_name"),
         "agent_version": (result.get("agent_info") or {}).get("version"),
         "exception_type": exception.get("exception_type"),
+        "exception_message": (exception.get("exception_message") or "")[:300],
+        "verifier_failure": verifier_failure,
         "reward": reward,
         "report_chars": len(report.read_text(encoding="utf-8")) if report.is_file() else 0,
     }
 
 
-def graded_in_reward(reward: Optional[Dict[str, Any]]) -> bool:
-    """Whether both LLM judges have written their scores into this reward.json."""
-    return reward is not None and all(key in reward for key in GRADED_KEYS)
+# -- diagnosis --------------------------------------------------------------------------------------
+# Every warning and per-case error starts with a category, so the reader knows which debugging path
+# to take before reading further: [credentials] a key is missing or was rejected; [agent] the model's
+# own behaviour (it raised, or wrote no report); [judge] an LLM judge failed; [task build] the built
+# task is incomplete; [environment] the container, harness or tools failed; [timeout] the case ran
+# out of time. Each names what to check and the file to open.
+
+# Per-trial record each judge writes (run_case.py's JUDGES); judge -> (file, job summary).
+JUDGE_FILES = {
+    "process": ("process.json", "process_summary.json"),
+    "policy": ("policy_support.json", "policy_support_summary.json"),
+}
+
+
+def dead_trial_message(trial: Dict[str, Any], trial_dir: Path) -> str:
+    """Why a trial has no score, by which part failed."""
+    if trial["verifier_failure"] == "rubrics_load_failed":
+        return (
+            "[task build] the verifier could not load this task's rubric bundle, so the case is unscored. "
+            f"Check the task build; see {trial_dir}/verifier/test-stdout.txt"
+        )
+    if trial["verifier_failure"] == "judge_launch_failed":
+        return (
+            "[environment] the verifier could not start its judge inside the container, so the case is "
+            f"unscored. See {trial_dir}/verifier/test-stdout.txt"
+        )
+    exc = f" ({trial['exception_type']}: {trial['exception_message']})" if trial["exception_type"] else ""
+    return (
+        f"[environment] harbor recorded no verifier result{exc}: the container or harness failed before "
+        f"scoring. See {trial_dir}/trial.log and exception_info in {trial_dir}/result.json"
+    )
+
+
+def trial_issues(trial: Dict[str, Any], trial_dir: Path) -> list:
+    """(warning key, message) for each problem in a scored trial."""
+    reward = trial["reward"] or {}
+    issues = []
+    if trial["status"] == "agent_error":
+        issues.append(
+            (
+                "agent_error",
+                f"[agent] the agent raised {trial['exception_type']}: {trial['exception_message']}. The case is "
+                f"still scored and counts in clinicare_trial_failed. Debug the agent: {trial_dir}/agent/ and "
+                f"{trial_dir}/trial.log",
+            )
+        )
+    if reward.get("report_present") == 0:
+        issues.append(
+            (
+                "no_report",
+                "[agent] the agent finished without writing a report, so the case scores 0 and the judges have "
+                f"nothing to grade. This is the agent's behaviour, not a grading problem. See {trial_dir}/agent/",
+            )
+        )
+    if (reward.get("evidence_calls_auth_error") or 0) > 0:
+        issues.append(
+            (
+                "mimic_auth",
+                f"[credentials] {int(reward['evidence_calls_auth_error'])} MIMIC tool call(s) were rejected for "
+                "credentials, so the agent may have worked without patient data and its score may not reflect "
+                f"the model. Check MIMIC_API_SECRET in CliniCARE's .env; see {trial_dir}/verifier/evidence.jsonl",
+            )
+        )
+    if reward.get("environment_degraded") == 1:
+        issues.append(
+            (
+                "environment_degraded",
+                "[environment] the agent reported a degraded environment (its tools were failing). Check the "
+                f"MIMIC tool sidecar; see the agent's note in {trial_dir}/verifier/report.md",
+            )
+        )
+    return issues
+
+
+def scored_in_reward(reward: Optional[Dict[str, Any]]) -> Dict[str, bool]:
+    """Which judges' scores this reward.json already carries (from this run or an earlier one)."""
+    reward = reward or {}
+    return {"process": "process_pct" in reward, "policy": reward.get("policy_support_judged") == 1}
+
+
+def live_grading(report: Dict[str, Any], reward: Optional[Dict[str, Any]]) -> Dict[str, Dict[str, Any]]:
+    """run_case.py's ``grading`` report, except that a judge whose score an earlier run already wrote
+    counts as scored even if it failed this time (e.g. the judge keys were since removed)."""
+    if "grading" not in report:  # an older CliniCARE checkout: it reports only the overall flag
+        if report.get("graded") or all(scored_in_reward(reward).values()):
+            return {}
+        return {"judges": {"outcome": "failed", "reason": "unreported", "detail": None}}
+    grading = dict(report.get("grading") or {})
+    for judge, already in scored_in_reward(reward).items():
+        if already and (grading.get(judge) or {}).get("outcome") == "failed":
+            grading[judge] = {"outcome": "scored", "reason": "scored_earlier", "detail": None}
+    return grading
+
+
+def _judge_failure(error: str) -> Dict[str, Any]:
+    kind = error.split(":", 1)[0].strip()
+    reason = "judge_credentials_rejected" if kind in REJECTED_KEY_ERRORS else "judge_error"
+    return {"outcome": "failed", "reason": reason, "detail": error}
+
+
+def replay_grading(trial: Dict[str, Any], trial_dir: Path) -> Dict[str, Dict[str, Any]]:
+    """run_case.py's ``grading`` report, rebuilt from the files a CliniCARE grading run left behind."""
+    reward = trial["reward"] or {}
+    scored = scored_in_reward(reward)
+    grading = {}
+    for judge, (trial_file, summary_file) in JUDGE_FILES.items():
+        try:
+            error = json.loads((trial_dir / "verifier" / trial_file).read_text(encoding="utf-8")).get("error")
+        except (OSError, ValueError):
+            error = None
+        if scored[judge]:
+            grading[judge] = {"outcome": "scored", "reason": "scored", "detail": None}
+        elif error:
+            grading[judge] = _judge_failure(error)
+        elif reward.get("report_present") == 0:
+            grading[judge] = {"outcome": "skipped", "reason": "no_report", "detail": None}
+        elif not (trial_dir.parent / summary_file).is_file():
+            grading[judge] = {"outcome": "failed", "reason": "not_graded", "detail": None}
+        else:  # the judge ran over this job and left no record for the trial: nothing to score
+            grading[judge] = {"outcome": "skipped", "reason": "nothing_to_score", "detail": None}
+    return grading
+
+
+def grading_issues(grading: Dict[str, Dict[str, Any]], trial_dir: Path, job_log: Optional[Path]) -> list:
+    """(warning key, message) for each judge that failed. By-design skips (no report, policy-off,
+    no rubrics of that kind) are not problems; a missing report is reported as an agent issue."""
+    log = f"the case's job log {job_log}" if job_log else "the CliniCARE grading output"
+    issues = []
+    for judge, result in grading.items():
+        reason, detail = result.get("reason"), result.get("detail")
+        if result.get("outcome") != "failed":
+            continue
+        if reason == "judge_credentials_missing":
+            message = (
+                f"[credentials] judge credentials are missing ({detail}), so no case can be graded and "
+                "clinicare_process_score / clinicare_policy_support will be blank. Set them in CliniCARE's .env"
+            )
+        elif reason == "judge_credentials_rejected":
+            message = (
+                f"[credentials] the judge API rejected the judge key ({detail}). Check JUDGE_API_KEY and "
+                f"JUDGE_BASE_URL in CliniCARE's .env; first case: {trial_dir}"
+            )
+        elif reason == "judge_error":
+            message = (
+                f"[judge] the {judge} judge failed on a case ({detail}), usually a rate limit, timeout or "
+                "malformed reply. Re-run the suite to retry; finished cases are reused. See "
+                f"{trial_dir}/verifier/{JUDGE_FILES[judge][0]}"
+            )
+        elif reason == "no_rubrics":
+            message = (
+                f"[task build] the {judge} judge found no usable rubric bundle for a case, so it could not "
+                f"score it. Check the task build; see {trial_dir}/verifier/"
+            )
+        elif reason == "not_graded":
+            message = (
+                "[judge] this replayed job was never graded in CliniCARE, so the judged columns are blank. "
+                "Grade it first: benchmark/eval/metrics/{process,policy_support}.py <job dir> --amend-reward"
+            )
+        elif reason == "unreported":
+            message = (
+                "[judge] grading did not complete, and this CliniCARE checkout does not report why. Update "
+                f"the CliniCARE checkout for a specific cause, or see {log}"
+            )
+        else:  # judge_script_failed, or a reason from a newer CliniCARE
+            message = f"[judge] the {judge} judge did not finish ({reason}: {detail}). See {log}"
+        issues.append((f"{judge}:{reason}" if reason in ("judge_error", "judge_script_failed") else reason, message))
+    return issues
 
 
 def _completion(trial: Dict[str, Any], system: str, grade_requested: bool, graded: bool) -> RequestResult:
@@ -160,28 +327,20 @@ class CliniCAREClient(Client):
     _lock = threading.Lock()
     _replay_index: Dict[str, Dict[str, Path]] = {}
     _docker_checked = False
-    _warned_ungraded = False
+    _warned: set = set()
 
     def __init__(self, cache_config: Optional[CacheConfig] = None, **kwargs: Any):
         del cache_config, kwargs
 
-    def _note_grading(self, grade_requested: bool, graded: bool, how_to_fix: str) -> None:
-        """Warn (once per run) when grade=true was asked for and a case came back ungraded.
-
-        The case keeps its deterministic score; only the judged columns go missing, which would
-        otherwise be silent. Each such case is also counted in clinicare_grading_failed.
-        """
-        if not grade_requested or graded:
-            return
-        with self._lock:
-            if self._warned_ungraded:
-                return
-            type(self)._warned_ungraded = True
-        hwarn(
-            "CliniCARE: grade=true was requested but a case was not graded, so clinicare_process_score / "
-            f"clinicare_policy_support will be missing for it. {how_to_fix} "
-            "(warned once; see clinicare_grading_failed in stats.json for the count)"
-        )
+    def _warn(self, issues: list) -> None:
+        """Log each kind of problem once per run, naming the first case it was seen in. The counts are
+        in stats.json (clinicare_trial_failed, clinicare_grading_failed and the trust signals)."""
+        for key, message in issues:
+            with self._lock:
+                if key in self._warned:
+                    continue
+                self._warned.add(key)
+            hwarn(f"CliniCARE {message} (logged once per run; see stats.json for how many cases)")
 
     def make_request(self, request: Request) -> RequestResult:
         envelope = json.loads(request.prompt)
@@ -248,27 +407,29 @@ class CliniCAREClient(Client):
                 env=os.environ.copy(),
             )
         except subprocess.TimeoutExpired:
-            return _failed(f"CliniCARE case timed out after {timeout}s", fatal=False)
+            return _failed(
+                f"CliniCARE [timeout] the case ran past case_timeout_sec={timeout}s and was stopped. Check the "
+                f"job log {jobs_dir / (cmd[cmd.index('--job-name') + 1] + '.log')}; raise case_timeout_sec if "
+                "the agent needs longer",
+                fatal=False,
+            )
         if proc.returncode != 0:
             # Abort the run rather than record hundreds of empty results (see the note at the top).
             return _failed(
                 f"CliniCARE run_case failed (exit {proc.returncode}): {proc.stderr.strip()[-2000:]}", fatal=True
             )
         report = json.loads(proc.stdout.strip().splitlines()[-1])
-        trial = read_trial(Path(report["trial_dir"]))
-        self._check_attribution(trial["model_name"], row, Path(report["trial_dir"]))
+        trial_dir = Path(report["trial_dir"])
+        trial = read_trial(trial_dir)
+        self._check_attribution(trial["model_name"], row, trial_dir)
         if trial["status"] == "dead":
-            return _failed(f"CliniCARE trial died ({trial['exception_type']}); see {report['trial_dir']}", fatal=False)
+            return _failed(f"CliniCARE {dead_trial_message(trial, trial_dir)}", fatal=False)
+        self._warn(trial_issues(trial, trial_dir))
         grade_requested = bool(envelope.get("grade"))
-        # Graded if both judges succeeded this run (run_case.py's flag) or the reward already carries
-        # their scores from an earlier graded run: either way the judged columns are filled. The
-        # reward check also covers older CliniCARE checkouts that do not report the flag.
-        graded = bool(report.get("graded")) or graded_in_reward(trial["reward"])
-        self._note_grading(
-            grade_requested,
-            graded,
-            "Check JUDGE_BASE_URL / JUDGE_API_KEY in CliniCARE's .env; the judge error is in the case's job log.",
-        )
+        grading = live_grading(report, trial["reward"]) if grade_requested else {}
+        graded = grade_requested and all(result.get("outcome") != "failed" for result in grading.values())
+        if grade_requested:
+            self._warn(grading_issues(grading, trial_dir, jobs_dir / f"{trial_dir.parent.name}.log"))
         return _completion(trial, system, grade_requested, graded)
 
     # -- replay -----------------------------------------------------------------------------------
@@ -312,15 +473,13 @@ class CliniCAREClient(Client):
             return _failed(f"no finished trial for task {envelope['task_id']}", fatal=False)
         trial = read_trial(trial_dir)
         if trial["status"] == "dead":
-            return _failed(f"CliniCARE trial died ({trial['exception_type']})", fatal=False)
+            return _failed(f"CliniCARE {dead_trial_message(trial, trial_dir)}", fatal=False)
+        self._warn(trial_issues(trial, trial_dir))
         grade_requested = bool(envelope.get("grade"))
-        graded = graded_in_reward(trial["reward"])
-        self._note_grading(
-            grade_requested,
-            graded,
-            "Replay only reads results: grade the job in CliniCARE first (run_case.py --grade, or "
-            "benchmark/eval/metrics/{process,policy_support}.py --amend-reward).",
-        )
+        grading = replay_grading(trial, trial_dir)
+        graded = grade_requested and all(result["outcome"] != "failed" for result in grading.values())
+        if grade_requested:
+            self._warn(grading_issues(grading, trial_dir, None))
         return _completion(trial, row["system"], grade_requested, graded)
 
     @staticmethod
