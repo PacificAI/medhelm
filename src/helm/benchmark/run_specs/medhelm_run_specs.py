@@ -14,7 +14,6 @@ import yaml
 from helm.benchmark.adaptation.adapter_spec import (
     ADAPT_MULTIPLE_CHOICE_JOINT,
     ADAPT_CHAT,
-    ADAPT_GENERATION,
     ADAPT_HEALTH_ADMIN_BENCH,
     ADAPT_PHYSICIAN_BENCH,
     AdapterSpec,
@@ -101,20 +100,13 @@ def _get_medrobustness_spec(scenario_name: str, scenario_class: str, data_path: 
         class_name=f"helm.benchmark.scenarios.medrobustness.{scenario_class}",
         args={"data_path": data_path},
     )
-    adapter_spec = AdapterSpec(
-        method=ADAPT_GENERATION,
+    adapter_spec = get_generation_adapter_spec(
         instructions="",
-        input_prefix="",
-        input_suffix="",
-        output_prefix="",
-        output_suffix="",
-        instance_prefix="",
-        max_train_instances=0,
-        num_outputs=1,
         max_tokens=5,
-        temperature=0.0,
-        stop_sequences=["\n"],
+        max_train_instances=0,
+        temperature=0,
     )
+
     metric_specs = [
         MetricSpec(
             class_name="helm.benchmark.metrics.medrobustness_metrics.MedRobustnessMetric",
@@ -122,47 +114,47 @@ def _get_medrobustness_spec(scenario_name: str, scenario_class: str, data_path: 
         )
     ] + get_basic_metric_specs([])
 
-    run_name = f"medrobustness_{scenario_name}"
+    run_name = f"pr26_{scenario_name}"
     return RunSpec(
         name=run_name,
         scenario_spec=scenario_spec,
         adapter_spec=adapter_spec,
         metric_specs=metric_specs,
-        groups=["clinical", "medrobustness", run_name],
+        groups=["clinical", "PacificMedRobustness", run_name],
     )
 
 
-@run_spec_function("medrobustness_format")
+@run_spec_function("pr26_format")
 def get_medrobustness_format_spec(data_path: str) -> RunSpec:
     return _get_medrobustness_spec("format", "pr26_scenarios.PR26FormatScenario", data_path)
 
 
-@run_spec_function("medrobustness_control")
+@run_spec_function("pr26_control")
 def get_medrobustness_control_spec(data_path: str) -> RunSpec:
     return _get_medrobustness_spec("control", "pr26_scenarios.PR26ControlScenario", data_path)
 
 
-@run_spec_function("medrobustness_position")
+@run_spec_function("pr26_position")
 def get_medrobustness_position_spec(data_path: str) -> RunSpec:
     return _get_medrobustness_spec("position", "pr26_scenarios.PR26PositionScenario", data_path)
 
 
-@run_spec_function("medrobustness_paraphrase")
+@run_spec_function("pr26_paraphrase")
 def get_medrobustness_paraphrase_spec(data_path: str) -> RunSpec:
     return _get_medrobustness_spec("paraphrase", "pr26_scenarios.PR26ParaphraseScenario", data_path)
 
 
-@run_spec_function("medrobustness_negation")
+@run_spec_function("pr26_negation")
 def get_medrobustness_negation_spec(data_path: str) -> RunSpec:
     return _get_medrobustness_spec("negation", "pr26_scenarios.PR26NegationScenario", data_path)
 
 
-@run_spec_function("medrobustness_temporal")
+@run_spec_function("pr26_temporal")
 def get_medrobustness_temporal_spec(data_path: str) -> RunSpec:
     return _get_medrobustness_spec("temporal", "pr26_scenarios.PR26TemporalScenario", data_path)
 
 
-@run_spec_function("medrobustness_numeracy")
+@run_spec_function("pr26_numeracy")
 def get_medrobustness_numeracy_spec(data_path: str) -> RunSpec:
     return _get_medrobustness_spec("numeracy", "pr26_scenarios.PR26NumeracyScenario", data_path)
 

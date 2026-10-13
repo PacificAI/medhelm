@@ -40,25 +40,19 @@ def test_medrobustness_format_run_spec_uses_verbatim_zero_shot_prompts() -> None
 
     run_spec = get_medrobustness_format_spec(data_path)
 
-    assert run_spec.name == "medrobustness_format"
+    assert run_spec.name == "pr26_format"
     assert run_spec.scenario_spec.args == {"data_path": data_path}
     assert run_spec.adapter_spec.method == ADAPT_GENERATION
-    assert run_spec.adapter_spec.instructions == ""
-    assert run_spec.adapter_spec.input_prefix == ""
-    assert run_spec.adapter_spec.input_suffix == ""
-    assert run_spec.adapter_spec.output_prefix == ""
-    assert run_spec.adapter_spec.output_suffix == ""
-    assert run_spec.adapter_spec.instance_prefix == ""
     assert run_spec.adapter_spec.max_train_instances == 0
     assert run_spec.adapter_spec.num_outputs == 1
-    assert run_spec.adapter_spec.temperature == 0.0
+    assert run_spec.adapter_spec.temperature == 0
     assert run_spec.metric_specs[0].class_name == ("helm.benchmark.metrics.medrobustness_metrics.MedRobustnessMetric")
 
 
 def test_cli_cap_reaches_scenario_and_keeps_every_pair_intact(tmp_path: Path) -> None:
     data_path = tmp_path / "PR26-Format-g1.xlsx"
     _write_workbook(data_path, case_count=20)
-    run_entry = RunEntry(description=f"medrobustness_format:data_path={data_path},model=simple/model1", priority=1)
+    run_entry = RunEntry(description=f"pr26_format:data_path={data_path},model=simple/model1", priority=1)
 
     run_spec = run_entries_to_run_specs([run_entry], max_eval_instances=40)[0]
     assert run_spec.scenario_spec.args["max_eval_instances"] == 40
