@@ -12,6 +12,7 @@ from helm.benchmark.scenarios.medrobustness.pr26_scenarios import PR26NumeracySc
 from helm.benchmark.scenarios.medrobustness.pr26_scenarios import PR26ParaphraseScenario
 from helm.benchmark.scenarios.medrobustness.pr26_scenarios import PR26PositionScenario
 from helm.benchmark.scenarios.medrobustness.pr26_scenarios import PR26TemporalScenario
+from helm.benchmark.scenarios.medrobustness.pr26_scenarios import PR26TerminologyScenario
 from helm.benchmark.scenarios.scenario import TEST_SPLIT
 
 SCENARIOS: List[Type[PR26BaseScenario]] = [
@@ -22,6 +23,7 @@ SCENARIOS: List[Type[PR26BaseScenario]] = [
     PR26NegationScenario,
     PR26TemporalScenario,
     PR26NumeracyScenario,
+    PR26TerminologyScenario,
 ]
 
 

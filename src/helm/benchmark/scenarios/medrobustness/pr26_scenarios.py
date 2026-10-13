@@ -75,3 +75,15 @@ class PR26NumeracyScenario(PR26BaseScenario):
         "the same correct management decision."
     )
     what = "Assess robustness of clinical management decisions to numeric re-expression"
+
+
+class PR26TerminologyScenario(PR26BaseScenario):
+    """PacificMedRobustness PR26 Terminology: abbreviations and brand names for generic drugs."""
+
+    name = "pr26_terminology"
+    display_name = "Terminology"
+    description = (
+        "Evaluates whether a clinical abbreviation expanded in the record, or a generic drug name replaced by its "
+        "brand name, produces the same correct management decision."
+    )
+    what = "Assess robustness of clinical management decisions to medical terminology variants"

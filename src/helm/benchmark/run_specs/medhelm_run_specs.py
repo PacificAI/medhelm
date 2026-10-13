@@ -120,7 +120,7 @@ def _get_medrobustness_spec(scenario_name: str, scenario_class: str, data_path: 
         scenario_spec=scenario_spec,
         adapter_spec=adapter_spec,
         metric_specs=metric_specs,
-        groups=["clinical", "PacificMedRobustness", run_name],
+        groups=["PacificMedRobustness", run_name],
     )
 
 
@@ -157,6 +157,11 @@ def get_medrobustness_temporal_spec(data_path: str) -> RunSpec:
 @run_spec_function("pr26_numeracy")
 def get_medrobustness_numeracy_spec(data_path: str) -> RunSpec:
     return _get_medrobustness_spec("numeracy", "pr26_scenarios.PR26NumeracyScenario", data_path)
+
+
+@run_spec_function("pr26_terminology")
+def get_medrobustness_terminology_spec(data_path: str) -> RunSpec:
+    return _get_medrobustness_spec("terminology", "pr26_scenarios.PR26TerminologyScenario", data_path)
 
 
 @run_spec_function("sct_bench")
