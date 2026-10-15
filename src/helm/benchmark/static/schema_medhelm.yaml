@@ -625,6 +625,52 @@ metrics:
     description: "Noise floor: among control pairs with a correct arm A, rate of valid but incorrect arm B answers after whitespace-only changes."
     lower_is_better: true
 
+  - name: medgrounding_fully_correct_rate
+    display_name: Fully correct rate
+    short_display_name: Fully correct
+    description: "Rate of cases answered with the key. For paired benchmarks, both arms must be answered correctly."
+    lower_is_better: false
+
+  - name: medgrounding_arm_a_accuracy
+    display_name: Arm A accuracy
+    short_display_name: Arm A
+    description: Accuracy on the baseline arm of paired benchmarks.
+    lower_is_better: false
+
+  - name: medgrounding_arm_b_accuracy
+    display_name: Arm B accuracy
+    short_display_name: Arm B
+    description: Accuracy on the transformed arm of paired benchmarks.
+    lower_is_better: false
+
+  - name: medgrounding_non_letter_rate
+    display_name: Non-letter rate
+    short_display_name: Non-letter
+    description: Rate of responses that do not identify exactly one answer from A to G.
+    lower_is_better: true
+
+  - name: medgrounding_kept_rate
+    display_name: Kept answer rate
+    short_display_name: Kept
+    description: "Among cases whose full-record answer differs from the key, rate at which the model keeps the full-record answer after the necessary fact is removed or inverted."
+    lower_is_better: true
+
+  - name: medgrounding_wrong_move_rate
+    display_name: Wrong move rate
+    short_display_name: Wrong move
+    description: "Rate of valid answers that are neither the key, the kept answer, ascertain, nor cannot-decide."
+    lower_is_better: true
+
+  - name: medgrounding_ascertain_rate
+    display_name: Ascertain rate
+    short_display_name: Ascertain
+    description: Rate of answers that choose the ascertain option.
+
+  - name: medgrounding_cannot_decide_rate
+    display_name: Cannot decide rate
+    short_display_name: Cannot decide
+    description: Rate of answers that choose the cannot-decide option.
+
 ############################################################
 perturbations: []
 
@@ -689,7 +735,7 @@ run_groups:
       - medical_research
       - administration_and_workflow
       - PacificMedRobustness
-
+      - PacificMedGrounding
   - name: clinical_decision_support
     display_name: Clinical Decision Support
     description: Scenarios for clinical decision support
@@ -1588,6 +1634,120 @@ run_groups:
       - pr26_temporal
       - pr26_numeracy
       - pr26_terminology
+
+  - name: PacificMedGrounding
+    display_name: PacificMedGrounding
+    description: PacificMedGrounding evaluates whether clinical management decisions remain grounded in the patient record when a necessary fact is removed, inverted, contradicted, stale, misfiled, or undecidable.
+    category: Healthcare Task Categories
+    subgroups:
+      - pg26_ablation
+      - pg26_abstention
+      - pg26_contradiction
+      - pg26_inversion
+      - pg26_misfiled
+      - pg26_staleness
+
+  - name: pg26_ablation
+    display_name: Ablation
+    description: Evaluates whether the model keeps the correct management decision when a necessary fact is removed from the record.
+    metric_groups:
+      - accuracy
+      - efficiency
+      - general_information
+    environment:
+      main_name: medgrounding_fully_correct_rate
+      main_split: test
+    taxonomy:
+      task: Classification
+      what: Assess whether clinical management decisions remain grounded when a necessary record fact is removed
+      who: Clinician
+      when: Any
+      language: English
+
+  - name: pg26_abstention
+    display_name: Abstention
+    description: Evaluates whether the model abstains when the record cannot decide the clinical management question.
+    metric_groups:
+      - accuracy
+      - efficiency
+      - general_information
+    environment:
+      main_name: medgrounding_fully_correct_rate
+      main_split: test
+    taxonomy:
+      task: Classification
+      what: Assess whether clinical management decisions abstain when the record is insufficient
+      who: Clinician
+      when: Any
+      language: English
+
+  - name: pg26_contradiction
+    display_name: Contradiction
+    description: Evaluates whether the model handles two record sources that disagree about the same clinical finding.
+    metric_groups:
+      - accuracy
+      - efficiency
+      - general_information
+    environment:
+      main_name: medgrounding_fully_correct_rate
+      main_split: test
+    taxonomy:
+      task: Classification
+      what: Assess whether clinical management decisions handle contradictory record sources
+      who: Clinician
+      when: Any
+      language: English
+
+  - name: pg26_inversion
+    display_name: Inversion
+    description: Evaluates whether the model reverses its management decision when the record finding is inverted.
+    metric_groups:
+      - accuracy
+      - efficiency
+      - general_information
+    environment:
+      main_name: medgrounding_fully_correct_rate
+      main_split: test
+    taxonomy:
+      task: Classification
+      what: Assess whether clinical management decisions follow an inverted record finding
+      who: Clinician
+      when: Any
+      language: English
+
+  - name: pg26_misfiled
+    display_name: Misfiled
+    description: Evaluates whether the model rejects a result that cannot belong to the patient in the record.
+    metric_groups:
+      - accuracy
+      - efficiency
+      - general_information
+    environment:
+      main_name: medgrounding_fully_correct_rate
+      main_split: test
+    taxonomy:
+      task: Classification
+      what: Assess whether clinical management decisions reject misfiled record results
+      who: Clinician
+      when: Any
+      language: English
+
+  - name: pg26_staleness
+    display_name: Staleness
+    description: Evaluates whether the model relies on the current value rather than an outdated value in the record.
+    metric_groups:
+      - accuracy
+      - efficiency
+      - general_information
+    environment:
+      main_name: medgrounding_fully_correct_rate
+      main_split: test
+    taxonomy:
+      task: Classification
+      what: Assess whether clinical management decisions use current rather than outdated record values
+      who: Clinician
+      when: Any
+      language: English
 
   - name: pr26_format
     display_name: Format
