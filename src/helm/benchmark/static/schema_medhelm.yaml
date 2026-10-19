@@ -574,7 +574,7 @@ metrics:
 
   - name: medrobustness_fully_correct_rate
     display_name: Fully correct pair rate
-    short_display_name: Fully correct
+    short_display_name: Fully correct rate
     description: Rate of preserve pairs for which both arms are answered correctly. Higher means the model is more robust to the perturbation.
     lower_is_better: false
 
@@ -627,7 +627,7 @@ metrics:
 
   - name: medgrounding_fully_correct_rate
     display_name: Fully correct rate
-    short_display_name: Fully correct
+    short_display_name: Fully correct rate
     description: "Rate of cases answered with the key. For paired benchmarks, both arms must be answered correctly."
     lower_is_better: false
 
