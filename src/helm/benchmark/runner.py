@@ -1,20 +1,29 @@
-import dacite
+import dataclasses
 import json
 import math
 import os
 import traceback
 import typing
 from collections import Counter
-import dataclasses
 from typing import Any, Dict, List
-import numpy as np
 
+import dacite
+import numpy as np
 from tqdm import tqdm
 
+from helm.benchmark.adaptation.adapter_spec import ADAPT_HEALTH_ADMIN_BENCH
+from helm.benchmark.adaptation.adapters.adapter import Adapter
+from helm.benchmark.adaptation.adapters.adapter_factory import AdapterFactory
 from helm.benchmark.adaptation.request_state import RequestState
-from helm.common.general import ensure_directory_exists, write, asdict_without_nones
-from helm.common.hierarchical_logger import hlog, htrack_block, hwarn
-from helm.common.cache import cache_stats
+from helm.benchmark.adaptation.scenario_state import ScenarioState
+from helm.benchmark.annotation_executor import AnnotationExecutionSpec, AnnotationExecutor
+from helm.benchmark.data_preprocessor import DataPreprocessor
+from helm.benchmark.executor import ExecutionSpec, Executor
+from helm.benchmark.metrics.dry_run_metrics import DryRunMetric
+from helm.benchmark.metrics.metric import MetricInterface, MetricResult, PerInstanceStats, create_metric, Stat
+from helm.benchmark.metrics.metric_name import MetricName
+from helm.benchmark.metrics.metric_service import MetricService
+from helm.benchmark.run_spec import RunSpec
 from helm.benchmark.scenarios.scenario import (
     EVAL_SPLITS,
     TRAIN_SPLIT,
@@ -24,28 +33,28 @@ from helm.benchmark.scenarios.scenario import (
     get_scenario_cache_path,
     with_instance_ids,
 )
-from helm.benchmark.adaptation.adapters.adapter import Adapter
-from helm.benchmark.adaptation.adapter_spec import ADAPT_HEALTH_ADMIN_BENCH
-from helm.benchmark.adaptation.adapters.adapter_factory import AdapterFactory
-from helm.benchmark.adaptation.scenario_state import ScenarioState
-from helm.benchmark.run_spec import RunSpec
-from helm.benchmark.data_preprocessor import DataPreprocessor
-from helm.benchmark.executor import ExecutionSpec, Executor
-from helm.benchmark.annotation_executor import AnnotationExecutionSpec, AnnotationExecutor
-from helm.benchmark.metrics.dry_run_metrics import DryRunMetric
-from helm.benchmark.metrics.metric_name import MetricName
-from helm.benchmark.metrics.metric_service import MetricService
-from helm.benchmark.metrics.metric import MetricInterface, MetricResult, PerInstanceStats, create_metric, Stat
 from helm.benchmark.window_services.tokenizer_service import TokenizerService
-
+from helm.common.cache import cache_stats
+from helm.common.general import ensure_directory_exists, write, asdict_without_nones
+from helm.common.hierarchical_logger import hlog, htrack_block, hwarn
 
 _CURRENT_RUN_SPEC_NAME: typing.Optional[str] = None
+_CURRENT_RUN_PATH: typing.Optional[str] = None
 _BENCHMARK_OUTPUT_PATH: str = "benchmark_output"
 _CACHED_MODELS_FOLDER: str = "models"
 
 
 def _get_current_run_spec_name() -> typing.Optional[str]:
     return _CURRENT_RUN_SPEC_NAME
+
+
+def get_current_run_path() -> typing.Optional[str]:
+    """Directory for the run currently executing, if any.
+
+    Set by Runner.run_one so helpers such as parallel_map can write into the
+    run output directory without threading the path through every caller.
+    """
+    return _CURRENT_RUN_PATH
 
 
 def get_benchmark_output_path() -> str:
@@ -229,7 +238,6 @@ class Runner:
 
     def run_all(self, run_specs: List[RunSpec]):
         failed_run_specs: List[RunSpec] = []
-
         for run_spec in tqdm(run_specs, disable=None):
             try:
                 with htrack_block(f"Running {run_spec.name}"):
@@ -256,13 +264,14 @@ class Runner:
             self.executor.execution_spec = original_spec
 
     def run_one(self, run_spec: RunSpec):
-        global _CURRENT_RUN_SPEC_NAME
+        global _CURRENT_RUN_SPEC_NAME, _CURRENT_RUN_PATH
         _CURRENT_RUN_SPEC_NAME = run_spec.name
         run_path: str = self._get_run_path(run_spec)
         if self.skip_completed_runs and self._is_run_completed(run_path):
             hlog(f"Skipping run {run_spec.name} because run is completed and all output files exist.")
             return
         ensure_directory_exists(run_path)
+        _CURRENT_RUN_PATH = run_path
 
         # Load the scenario
         scenario: Scenario = create_scenario(run_spec.scenario_spec)
