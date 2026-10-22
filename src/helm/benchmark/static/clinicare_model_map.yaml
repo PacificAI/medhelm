@@ -1,0 +1,23 @@
+# Model map for CliniCARE-Bench. Reviewed config, not a lookup helper: it is the only thing tying
+# a MedHELM model to the CliniCARE system (harness + model) that runs it, and a wrong row would
+# publish one model's scores under another's name.
+#
+#   model         the evaluated MedHELM model (the leaderboard row). Exact match only.
+#   system        a System tag in CliniCARE's scripts/run_sweep.py: picks the agent harness, the
+#                 model string harbor sends, web-off flags and credential forwarding.
+#   harbor_model  the model string that system runs, as recorded in each trial's result.json
+#                 (config.agent.model_name). Checked on every trial, live or replayed.
+#   effort        optional reasoning effort (minimal | low | medium | high | xhigh).
+#
+# One system per model in v1: results report under the evaluated model's name, so a second harness
+# for the same model would need its own leaderboard axis.
+
+#
+# No models are mapped yet, so every model fails closed until a row is added. A row looks like:
+#
+#   - model: <provider>/<model>
+#     system: <run_sweep.py system tag>
+#     harbor_model: <provider>/<model>
+#     effort: null
+
+models: []

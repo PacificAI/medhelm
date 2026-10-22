@@ -43,6 +43,14 @@ models:
     release_date: 2026-01-01
     tags: [TEXT_MODEL_TAG, FULL_FUNCTIONALITY_TEXT_MODEL_TAG]
 
+  - name: clinicare/harness
+    display_name: CliniCARE Harness
+    description: Internal routing deployment that runs (or replays) a CliniCARE-Bench agent episode. Leaderboard rows use the evaluated MedHELM model, not this name.
+    creator_organization_name: Helm
+    access: open
+    release_date: 2026-01-01
+    tags: [TEXT_MODEL_TAG, FULL_FUNCTIONALITY_TEXT_MODEL_TAG]
+
   # Adobe
   - name: adobe/giga-gan
     display_name: GigaGAN (1B)

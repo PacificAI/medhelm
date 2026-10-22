@@ -14,6 +14,7 @@ import yaml
 from helm.benchmark.adaptation.adapter_spec import (
     ADAPT_MULTIPLE_CHOICE_JOINT,
     ADAPT_CHAT,
+    ADAPT_CLINICARE,
     ADAPT_HEALTH_ADMIN_BENCH,
     ADAPT_PHYSICIAN_BENCH,
     AdapterSpec,
@@ -2043,4 +2044,78 @@ def get_physician_bench_spec(
         adapter_spec=adapter_spec,
         metric_specs=metric_specs,
         groups=["physician_bench"],
+    )
+
+
+@run_spec_function("clinicare")
+def get_clinicare_spec(
+    clinicare_root: str = "",
+    tasks_dir: str = "",
+    job_dir: str = "",
+    jobs_dir: str = "",
+    effort: str = "",
+    grade: str = "",
+    case_timeout_sec: str = "",
+    cohort_csv: str = "",
+    task_ids: str = "",
+) -> RunSpec:
+    """CliniCARE-Bench. Runs each case live through the CliniCARE checkout (``clinicare_root`` or
+    ``CLINICARE_ROOT``), or replays a finished CliniCARE job dir when ``job_dir`` is given.
+    ``model=`` is the evaluated model; benchmark/static/clinicare_model_map.yaml maps it to a system."""
+    # Only non-empty args: scenario args appear in published group titles, and paths must not. Prefer
+    # CLINICARE_ROOT / CLINICARE_TASKS_DIR in the environment over paths on a published run entry.
+    scenario_args: Dict[str, str] = {
+        key: value
+        for key, value in {
+            "tasks_dir": tasks_dir,
+            "clinicare_root": clinicare_root,
+            "cohort_csv": cohort_csv,
+            "task_ids": task_ids,
+        }.items()
+        if value
+    }
+    scenario_spec = ScenarioSpec(
+        class_name="helm.benchmark.scenarios.clinicare_scenario.CliniCAREScenario",
+        args=scenario_args,
+    )
+
+    knobs: Dict[str, Any] = {
+        "clinicare_root": clinicare_root,
+        "tasks_dir": tasks_dir,
+        "job_dir": job_dir,
+        "jobs_dir": jobs_dir,
+        "effort": effort,
+        "grade": str(grade).strip().lower() in ("1", "true", "yes", "on"),
+        "case_timeout_sec": case_timeout_sec,
+    }
+    adapter_spec = AdapterSpec(
+        method=ADAPT_CLINICARE,
+        instructions=json.dumps({key: value for key, value in knobs.items() if value not in ("", None, False)}),
+        input_prefix="",
+        input_suffix="",
+        output_prefix="",
+        output_suffix="",
+        instance_prefix="",
+        max_train_instances=0,
+        num_outputs=1,
+        max_tokens=1,
+        temperature=0.0,
+        stop_sequences=[],
+    )
+
+    metric_specs = [
+        MetricSpec(class_name="helm.benchmark.metrics.clinicare_metrics.CliniCAREOutcomeMetric", args={}),
+        MetricSpec(class_name="helm.benchmark.metrics.clinicare_metrics.CliniCAREOfflineMetric", args={}),
+    ] + get_basic_metric_specs([])
+
+    # Settings that change what is measured go in the run name, so their outputs don't overwrite one
+    # another under runs/<suite>/ (HELM appends only model and model_deployment). Paths and task_ids
+    # stay out: run names are published.
+    name_args = [f"{key}={value}" for key, value in (("effort", effort), ("grade", knobs["grade"] and "true")) if value]
+    return RunSpec(
+        name="clinicare" + (":" + ",".join(name_args) if name_args else ""),
+        scenario_spec=scenario_spec,
+        adapter_spec=adapter_spec,
+        metric_specs=metric_specs,
+        groups=["clinicare"],
     )

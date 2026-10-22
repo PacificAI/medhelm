@@ -54,6 +54,7 @@ nav:
     - adding_new_scenarios.md
     - physician_bench.md
     - health_admin_bench.md
+    - clinicare.md
     - adding_new_tokenizers.md
     - downloading_raw_results.md
     - reproducing_leaderboards.md

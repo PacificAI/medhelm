@@ -371,6 +371,75 @@ metrics:
     description: Number of browser actions taken during a HealthAdminBench episode.
     lower_is_better: true
 
+  - name: clinicare_score
+    display_name: CliniCARE Score
+    short_display_name: CliniCARE
+    description: Fraction of CliniCARE-Bench cases whose four-way verdict (Yes / No / Indeterminate - lack of data / Indeterminate - medical ambiguity) matches the gold label, scored by the deterministic in-container verifier.
+    lower_is_better: false
+
+  - name: clinicare_verdict_parse_rate
+    display_name: CliniCARE Verdict Parse Rate
+    short_display_name: Parsed
+    description: Fraction of CliniCARE cases whose report contains exactly one parseable verdict; separates a wrong answer from no usable answer.
+    lower_is_better: false
+
+  - name: clinicare_grounding_precision
+    display_name: CliniCARE Grounding Precision
+    short_display_name: Grounding
+    description: Fraction of record IDs the agent cited that it actually retrieved from the chart (a citation-fabrication floor). Averaged only over cases with a trusted ID pool.
+    lower_is_better: false
+
+  - name: clinicare_policy_doc_f1
+    display_name: CliniCARE Policy Document F1
+    short_display_name: Policy F1
+    description: F1 of the clinical guideline documents the agent cited against those the case expects. Averaged only over cases where the agent cited at least one policy document.
+    lower_is_better: false
+
+  - name: clinicare_tool_calls
+    display_name: CliniCARE Tool Calls
+    short_display_name: Tool calls
+    description: Mean number of MIMIC tool calls per CliniCARE episode.
+    lower_is_better: false
+
+  - name: clinicare_process_score
+    display_name: CliniCARE Process Score
+    short_display_name: Process
+    description: LLM-judged process rubric score from 0 to 1 (did the investigation follow the scenario's required steps). Present only for graded runs; never blended into the CliniCARE Score.
+    lower_is_better: false
+
+  - name: clinicare_policy_support
+    display_name: CliniCARE Policy Citation Support
+    short_display_name: Policy support
+    description: LLM-judged fraction of policy citations whose cited passage supports the claim it is attached to. Present only for graded runs; a separate axis, never blended.
+    lower_is_better: false
+
+  # CliniCARE trust signals: defined so helm-summarize knows them, but in no metric group, so they
+  # stay in stats.json and off the leaderboard.
+  - name: clinicare_trial_failed
+    display_name: CliniCARE Trial Failed
+    description: Fraction of CliniCARE cases with no clean scored trial (setup or environment failure, timeout, or no trial in a replayed job). These cases are a coverage gap, not wrong answers.
+    lower_is_better: true
+
+  - name: clinicare_grading_failed
+    display_name: CliniCARE Grading Failed
+    description: Fraction of CliniCARE cases left without LLM-judged scores in a grade=true run (missing or rejected judge key, judge error).
+    lower_is_better: true
+
+  - name: clinicare_evidence_calls_auth_error
+    display_name: CliniCARE Evidence Auth Errors
+    description: Mean number of MIMIC tool calls per episode rejected by the data sidecar. Non-zero means the run lost MIMIC access and its numbers are invalid.
+    lower_is_better: true
+
+  - name: clinicare_environment_degraded
+    display_name: CliniCARE Environment Degraded
+    description: Fraction of CliniCARE episodes whose environment was degraded. Non-zero means those numbers are invalid.
+    lower_is_better: true
+
+  - name: clinicare_report_present
+    display_name: CliniCARE Report Present
+    description: Fraction of CliniCARE episodes in which the agent wrote a report.
+    lower_is_better: false
+
 
   # Summariazation metrics
   - name: summac
@@ -553,6 +622,22 @@ metric_groups:
     - name: inference_runtime
       split: ${main_split}
 
+  - name: clinicare_axes
+    display_name: CliniCARE axes
+    metrics:
+    - name: clinicare_verdict_parse_rate
+      split: ${main_split}
+    - name: clinicare_grounding_precision
+      split: ${main_split}
+    - name: clinicare_policy_doc_f1
+      split: ${main_split}
+    - name: clinicare_tool_calls
+      split: ${main_split}
+    - name: clinicare_process_score
+      split: ${main_split}
+    - name: clinicare_policy_support
+      split: ${main_split}
+
   - name: general_information
     display_name: General information
     hide_win_rates: true
@@ -623,6 +708,7 @@ run_groups:
       - health_bench_professional
       - physician_bench
       - medxpert_qa_text
+      - clinicare
 
   - name: clinical_note_generation
     display_name: Clinical Note Generation
@@ -1380,6 +1466,23 @@ run_groups:
       task: Computer-use agent evaluation
       what: Complete prior authorization, appeals/denials, and DME workflows in simulated portals
       who: Hospital Administrator
+      when: Any
+      language: English
+
+  - name: clinicare
+    display_name: CliniCARE-Bench
+    description: "CliniCARE-Bench evaluates agents on 750 clinical questions (25 scenarios x 30 patients) over real MIMIC-IV records. The agent reaches the chart only through a governed tool surface and must return a four-way verdict (Yes / No / Indeterminate - lack of data / Indeterminate - medical ambiguity) with cited evidence; 150 cases admit no defensible Yes or No. Each case is a full agent episode run by the CliniCARE harness. Gated: requires PhysioNet MIMIC-IV credentialing."
+    metric_groups:
+      - accuracy
+      - clinicare_axes
+      - general_information
+    environment:
+      main_name: clinicare_score
+      main_split: test
+    taxonomy:
+      task: Agentic clinical decision support
+      what: Investigate one patient's EHR with tools and adjudicate a clinical question
+      who: Clinician
       when: Any
       language: English
 

@@ -30,6 +30,13 @@ model_deployments:
     client_spec:
       class_name: "helm.clients.health_admin_bench_client.HealthAdminBenchClient"
 
+  - name: clinicare/harness
+    model_name: clinicare/harness
+    tokenizer_name: simple/tokenizer1
+    max_sequence_length: 8192
+    client_spec:
+      class_name: "helm.clients.clinicare_client.CliniCAREClient"
+
   # Stanford Health Care
   # For internal use only for MedHELM
   # Placed earlier in the file to make them non-default

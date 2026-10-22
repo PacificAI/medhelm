@@ -3,6 +3,7 @@ from helm.benchmark.adaptation.adapter_spec import (
     ADAPT_GENERATION,
     ADAPT_CHAT,
     ADAPT_GENERATION_MULTIMODAL,
+    ADAPT_CLINICARE,
     ADAPT_HEALTH_ADMIN_BENCH,
     ADAPT_LANGUAGE_MODELING,
     ADAPT_MULTIPLE_CHOICE_JOINT,
@@ -18,6 +19,7 @@ from helm.benchmark.adaptation.adapters.adapter import Adapter
 from helm.benchmark.adaptation.adapters.binary_ranking_adapter import BinaryRankingAdapter
 from helm.benchmark.adaptation.adapters.generation_adapter import GenerationAdapter
 from helm.benchmark.adaptation.adapters.chat_adapter import ChatAdapter
+from helm.benchmark.adaptation.adapters.clinicare_adapter import CliniCAREAdapter
 from helm.benchmark.adaptation.adapters.health_admin_bench_adapter import HealthAdminBenchAdapter
 from helm.benchmark.adaptation.adapters.physician_bench_adapter import PhysicianBenchAdapter
 from helm.benchmark.adaptation.adapters.language_modeling_adapter import LanguageModelingAdapter
@@ -46,6 +48,8 @@ class AdapterFactory:
 
         if method == ADAPT_EHR_INSTRUCTION:
             adapter = EHRInstructionAdapter(adapter_spec, tokenizer_service)
+        elif method == ADAPT_CLINICARE:
+            adapter = CliniCAREAdapter(adapter_spec, tokenizer_service)
         elif method == ADAPT_HEALTH_ADMIN_BENCH:
             adapter = HealthAdminBenchAdapter(adapter_spec, tokenizer_service)
         elif method == ADAPT_PHYSICIAN_BENCH:
