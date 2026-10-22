@@ -108,10 +108,10 @@ def test_paired_inversion_stats() -> None:
         # Both arms correct: fully correct.
         _paired("pair-1", "A", key="A", prediction="A"),
         _paired("pair-1", "B", key="B", prediction="B"),
-        # Arm B keeps arm A key: kept, not fully correct.
+        # Same letter in both arms across a key change: kept, not fully correct.
         _paired("pair-2", "A", key="A", prediction="A"),
         _paired("pair-2", "B", key="B", prediction="A"),
-        # Keys identical: kept not counted.
+        # Different letters in each arm: not kept.
         _paired("pair-3", "A", key="C", prediction="A"),
         _paired("pair-3", "B", key="C", prediction="C"),
     ]
@@ -121,8 +121,22 @@ def test_paired_inversion_stats() -> None:
     assert stats["medgrounding_fully_correct_rate"] == pytest.approx(1 / 3)
     assert stats["medgrounding_arm_a_accuracy"] == pytest.approx(2 / 3)
     assert stats["medgrounding_arm_b_accuracy"] == pytest.approx(2 / 3)
-    assert stats["medgrounding_kept_rate"] == pytest.approx(1 / 2)
+    assert stats["medgrounding_kept_rate"] == pytest.approx(1 / 3)
     assert "medgrounding_wrong_move_rate" not in stats
+
+
+def test_paired_ascertain_and_cannot_decide_rates() -> None:
+    request_states = [
+        _paired("pair-1", "A", key="A", prediction="E"),  # ascertain
+        _paired("pair-1", "B", key="B", prediction="F"),  # cannot decide
+        _paired("pair-2", "A", key="A", prediction="A"),
+        _paired("pair-2", "B", key="B", prediction="B"),
+    ]
+
+    stats = _means(MedGroundingMetric().evaluate_instances(request_states, ""))
+
+    assert stats["medgrounding_ascertain_rate"] == pytest.approx(1 / 4)
+    assert stats["medgrounding_cannot_decide_rate"] == pytest.approx(1 / 4)
 
 
 def test_paired_missing_arm_raises() -> None:

@@ -130,11 +130,12 @@ class MedGroundingMetric(EvaluateInstancesMetric):
         stats["medgrounding_fully_correct_rate"].add(arm_a.correct and arm_b.correct)
         stats["medgrounding_arm_a_accuracy"].add(arm_a.correct)
         stats["medgrounding_arm_b_accuracy"].add(arm_b.correct)
-        stats["medgrounding_non_letter_rate"].add(arm_a.non_letter)
-        stats["medgrounding_non_letter_rate"].add(arm_b.non_letter)
+        for arm in (arm_a, arm_b):
+            stats["medgrounding_non_letter_rate"].add(arm.non_letter)
+            stats["medgrounding_ascertain_rate"].add(arm.prediction == arm.ascertain_letter)
+            stats["medgrounding_cannot_decide_rate"].add(arm.prediction == arm.cannot_decide_letter)
 
-        if arm_a.key != arm_b.key:
-            stats["medgrounding_kept_rate"].add(arm_b.prediction == arm_a.key)
+        stats["medgrounding_kept_rate"].add(arm_a.prediction == arm_b.prediction)
 
     def get_metadata(self) -> List[MetricMetadata]:
         return [
