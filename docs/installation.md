@@ -79,6 +79,15 @@ To install all scenarios (standard, summarization, and gated):
 pip install "medhelm[summarization,gated]"
 ```
 
+### PhysicianBench (`[physician-bench]`)
+
+Adds the EHR-agent scenario (`physician_bench`). This extra is **not** on PyPI as a standalone product: you also need a sibling [PhysicianBench](https://github.com/healthrex/PhysicianBench) checkout, Docker, and the FHIR image. Full install, configure, and run instructions (one task or all 100) are in [PhysicianBench](physician_bench.md).
+
+```bash
+uv pip install -e ".[physician-bench]"
+uv pip install -e /path/to/PhysicianBench
+```
+
 ## Summary
 
 | Tier | Install | Scenarios |
@@ -87,5 +96,6 @@ pip install "medhelm[summarization,gated]"
 | **Summarization** | `pip install "medhelm[summarization]"` | DischargeMe, ACI-Bench, Patient-Edu (2–3 min install) |
 | **Gated** | `pip install "medhelm[gated]"` | MedQA, MedMCQA (Google Drive) |
 | **All tiers** | `pip install "medhelm[summarization,gated]"` | All of the above (install once, run any scenario) |
+| **PhysicianBench** | `uv pip install -e ".[physician-bench]"` plus sibling checkout | EHR-agent tasks; see [PhysicianBench](physician_bench.md) |
 
 See [Quick Start](/quick_start) for running benchmarks with `medhelm-run` (after activating your environment).
