@@ -93,6 +93,8 @@ medhelm-run --run-entries "clinicare:tasks_dir=<tasks dir>,job_dir=<job dir>,mod
   --suite clinicare-replay --max-eval-instances 750
 ```
 
+Replay expects one job dir covering every task in `tasks_dir`, such as a CliniCARE sweep job. Any task without a trial in it counts in `clinicare_trial_failed`. A live MedHELM run writes one job dir per case under `jobs/medhelm/`, so to replay one of those, add `task_ids=` with that case's task id.
+
 Run one case live, after the one-time setup. `tasks_dir` can point at a dir holding one task plus `_sidecar.compose.yml`, or pass `task_ids=` with the full build:
 
 ```bash
@@ -150,6 +152,7 @@ Every CliniCARE warning and per-case error starts with a tag that says which kin
 | `clinicare_trial_failed` | *(not on the leaderboard)* cases with no clean scored trial |
 | `clinicare_grading_failed` | *(not on the leaderboard; only with `grade=true`)* cases left without judged scores |
 | `clinicare_evidence_calls_auth_error`, `clinicare_environment_degraded` | *(not on the leaderboard)* non-zero means the run lost MIMIC access or a degraded environment, so its numbers are invalid |
+| `clinicare_report_present` | *(not on the leaderboard)* the agent wrote a report |
 
 A key a trial did not measure is **omitted, never counted as 0**. Absence varies a lot by system, so zero-filling would change rankings. Efficiency metrics are deliberately not shown: they would count the seed prompt, not the agent's real token spend.
 

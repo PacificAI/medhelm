@@ -413,6 +413,33 @@ metrics:
     description: LLM-judged fraction of policy citations whose cited passage supports the claim it is attached to. Present only for graded runs; a separate axis, never blended.
     lower_is_better: false
 
+  # CliniCARE trust signals: defined so helm-summarize knows them, but in no metric group, so they
+  # stay in stats.json and off the leaderboard.
+  - name: clinicare_trial_failed
+    display_name: CliniCARE Trial Failed
+    description: Fraction of CliniCARE cases with no clean scored trial (setup or environment failure, timeout, or no trial in a replayed job). These cases are a coverage gap, not wrong answers.
+    lower_is_better: true
+
+  - name: clinicare_grading_failed
+    display_name: CliniCARE Grading Failed
+    description: Fraction of CliniCARE cases left without LLM-judged scores in a grade=true run (missing or rejected judge key, judge error).
+    lower_is_better: true
+
+  - name: clinicare_evidence_calls_auth_error
+    display_name: CliniCARE Evidence Auth Errors
+    description: Mean number of MIMIC tool calls per episode rejected by the data sidecar. Non-zero means the run lost MIMIC access and its numbers are invalid.
+    lower_is_better: true
+
+  - name: clinicare_environment_degraded
+    display_name: CliniCARE Environment Degraded
+    description: Fraction of CliniCARE episodes whose environment was degraded. Non-zero means those numbers are invalid.
+    lower_is_better: true
+
+  - name: clinicare_report_present
+    display_name: CliniCARE Report Present
+    description: Fraction of CliniCARE episodes in which the agent wrote a report.
+    lower_is_better: false
+
 
   # Summariazation metrics
   - name: summac
