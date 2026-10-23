@@ -1,5 +1,6 @@
 import argparse
 from dataclasses import replace
+import inspect
 import os
 import re
 from typing import List, Optional
@@ -77,6 +78,15 @@ def run_entries_to_run_specs(
             adapter_spec: AdapterSpec = run_spec.adapter_spec
             if max_eval_instances is not None and adapter_spec.max_eval_instances is None:
                 adapter_spec = replace(adapter_spec, max_eval_instances=max_eval_instances)
+
+                # Scenarios that declare `max_eval_instances` receive the cap so they can keep related instances together.
+                scenario_class = get_class_by_name(run_spec.scenario_spec.class_name)
+                if "max_eval_instances" in inspect.signature(scenario_class.__init__).parameters:
+                    scenario_spec = replace(
+                        run_spec.scenario_spec,
+                        args={**run_spec.scenario_spec.args, "max_eval_instances": max_eval_instances},
+                    )
+                    run_spec = replace(run_spec, scenario_spec=scenario_spec)
 
             if adapter_spec.max_train_instances == 0:
                 adapter_spec = replace(adapter_spec, num_train_trials=1)

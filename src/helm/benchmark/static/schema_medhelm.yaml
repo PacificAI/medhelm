@@ -536,6 +536,95 @@ metrics:
     description: Percentage of model responses that fall within the expert agreement region (non-zero expert weight).
     lower_is_better: false
 
+  - name: medrobustness_accuracy
+    display_name: Overall accuracy
+    short_display_name: Accuracy
+    description: Accuracy across both arms of preserve pairs.
+    lower_is_better: false
+
+  - name: medrobustness_arm_a_accuracy
+    display_name: Arm A accuracy
+    short_display_name: Arm A
+    description: Accuracy on the baseline arm of preserve pairs.
+    lower_is_better: false
+
+  - name: medrobustness_arm_b_accuracy
+    display_name: Arm B accuracy
+    short_display_name: Arm B
+    description: Accuracy on the transformed arm of preserve pairs.
+    lower_is_better: false
+
+  - name: medrobustness_non_letter_rate
+    display_name: Non-letter rate
+    short_display_name: Non-letter
+    description: Rate of preserve-pair responses that do not identify exactly one answer from A to G.
+    lower_is_better: true
+
+  - name: medrobustness_arm_a_non_letter_rate
+    display_name: Arm A non-letter rate
+    short_display_name: Arm A non-letter
+    description: Non-letter response rate on the baseline arm of preserve pairs.
+    lower_is_better: true
+
+  - name: medrobustness_arm_b_non_letter_rate
+    display_name: Arm B non-letter rate
+    short_display_name: Arm B non-letter
+    description: Non-letter response rate on the transformed arm of preserve pairs.
+    lower_is_better: true
+
+  - name: medrobustness_fully_correct_rate
+    display_name: Fully correct pair rate
+    short_display_name: Fully correct
+    description: Rate of preserve pairs for which both arms are answered correctly. Higher means the model is more robust to the perturbation.
+    lower_is_better: false
+
+  - name: medrobustness_asymmetric_failure_rate
+    display_name: Asymmetric failure rate
+    short_display_name: Asymmetric failure
+    description: Among preserve pairs with a correct arm A, rate of valid but incorrect arm B answers.
+    lower_is_better: true
+
+  - name: medrobustness_failed_non_letter_rate
+    display_name: Arm B non-letter failure rate
+    short_display_name: Arm B non-letter failure
+    description: Among preserve pairs with a correct arm A, rate of non-letter arm B responses.
+    lower_is_better: true
+
+  - name: medrobustness_recovery_rate
+    display_name: Recovery rate
+    short_display_name: Recovery
+    description: Among preserve pairs with an incorrect arm A, rate for which arm B is correct.
+
+  - name: medrobustness_letter_change_rate
+    display_name: Letter change rate
+    short_display_name: Letter change
+    description: Rate of preserve pairs for which the predicted letter changes between arms.
+    lower_is_better: true
+
+  - name: medrobustness_inverted_arm_a_accuracy
+    display_name: Inverted pairs arm A accuracy
+    short_display_name: Inverted arm A
+    description: Accuracy on the baseline arm of invert pairs (opposite finding).
+    lower_is_better: false
+
+  - name: medrobustness_inverted_arm_b_accuracy
+    display_name: Inverted pairs arm B accuracy
+    short_display_name: Inverted arm B
+    description: Accuracy on the transformed arm of invert pairs (opposite finding).
+    lower_is_better: false
+
+  - name: medrobustness_inversion_rate
+    display_name: Inversion rate
+    short_display_name: Inversion
+    description: Rate of invert pairs for which both arms are answered correctly.
+    lower_is_better: false
+
+  - name: medrobustness_control_failure_rate
+    display_name: Control failure rate
+    short_display_name: Control failure
+    description: "Noise floor: among control pairs with a correct arm A, rate of valid but incorrect arm B answers after whitespace-only changes."
+    lower_is_better: true
+
 ############################################################
 perturbations: []
 
@@ -599,6 +688,7 @@ run_groups:
       - patient_communication
       - medical_research
       - administration_and_workflow
+      - PacificMedRobustness
 
   - name: clinical_decision_support
     display_name: Clinical Decision Support
@@ -1483,4 +1573,154 @@ run_groups:
       what: Verify presence and validity of written consent for medical procedures or information sharing
       who: Clinician, Legal Compliance Officer
       when: Pre-procedure or prior to information sharing
+      language: English
+
+  - name: PacificMedRobustness
+    display_name: PacificMedRobustness
+    description: PacificMedRobustness evaluates whether clinical management decisions stay correct when the same case is re-expressed in paired arms, covering format, whitespace, fact position, phrasing, negation, timing, numeric re-expression, and terminology.
+    category: Healthcare Task Categories
+    subgroups:
+      - pr26_format
+      - pr26_control
+      - pr26_position
+      - pr26_paraphrase
+      - pr26_negation
+      - pr26_temporal
+      - pr26_numeracy
+      - pr26_terminology
+
+  - name: pr26_format
+    display_name: Format
+    description: Evaluates whether clinically equivalent prose and tabular records produce the same correct management decision.
+    metric_groups:
+      - accuracy
+      - efficiency
+      - general_information
+    environment:
+      main_name: medrobustness_fully_correct_rate
+      main_split: test
+    taxonomy:
+      task: Classification
+      what: Assess robustness of clinical management decisions to record formatting
+      who: Clinician
+      when: Any
+      language: English
+
+  - name: pr26_control
+    display_name: Control
+    description: "Noise floor: whitespace and line-break changes only, with no clinical content change."
+    metric_groups:
+      - accuracy
+      - efficiency
+      - general_information
+    environment:
+      main_name: medrobustness_control_failure_rate
+      main_split: test
+    taxonomy:
+      task: Classification
+      what: Measure the noise floor of the paired protocol using whitespace-only changes
+      who: Clinician
+      when: Any
+      language: English
+
+  - name: pr26_position
+    display_name: Position
+    description: Evaluates whether the decisive facts stay answerable when they are scattered across the record.
+    metric_groups:
+      - accuracy
+      - efficiency
+      - general_information
+    environment:
+      main_name: medrobustness_fully_correct_rate
+      main_split: test
+    taxonomy:
+      task: Classification
+      what: Assess robustness of clinical management decisions to scattering of decisive facts
+      who: Clinician
+      when: Any
+      language: English
+
+  - name: pr26_paraphrase
+    display_name: Paraphrase
+    description: Evaluates whether a clinically equivalent question, phrased in a different register, produces the same correct management decision.
+    metric_groups:
+      - accuracy
+      - efficiency
+      - general_information
+    environment:
+      main_name: medrobustness_fully_correct_rate
+      main_split: test
+    taxonomy:
+      task: Classification
+      what: Assess robustness of clinical management decisions to question phrasing
+      who: Clinician
+      when: Any
+      language: English
+
+  - name: pr26_negation
+    display_name: Negation
+    description: Evaluates whether a decisive finding restated as absence, or inverted, is handled consistently.
+    metric_groups:
+      - accuracy
+      - efficiency
+      - general_information
+    environment:
+      main_name: medrobustness_fully_correct_rate
+      main_split: test
+    taxonomy:
+      task: Classification
+      what: Assess robustness of clinical management decisions to negated and restated findings
+      who: Clinician
+      when: Any
+      language: English
+
+  - name: pr26_temporal
+    display_name: Temporal
+    description: Evaluates whether clinical timing expressed relative to the note time produces the same correct management decision.
+    metric_groups:
+      - accuracy
+      - efficiency
+      - general_information
+    environment:
+      main_name: medrobustness_fully_correct_rate
+      main_split: test
+    taxonomy:
+      task: Classification
+      what: Assess robustness of clinical management decisions to temporal re-expression
+      who: Clinician
+      when: Any
+      language: English
+
+  - name: pr26_numeracy
+    display_name: Numeracy
+    description: Evaluates whether a decisive quantity re-expressed in another unit or derived from other values produces the same correct management decision.
+    metric_groups:
+      - accuracy
+      - efficiency
+      - general_information
+    environment:
+      main_name: medrobustness_fully_correct_rate
+      main_split: test
+    taxonomy:
+      task: Classification
+      what: Assess robustness of clinical management decisions to numeric re-expression
+      who: Clinician
+      when: Any
+      language: English
+
+  - name: pr26_terminology
+    display_name: Terminology
+    description: Evaluates whether a clinical abbreviation expanded in the record, or a generic drug name replaced by its brand name, produces the same correct management decision.
+    metric_groups:
+      - accuracy
+      - efficiency
+      - general_information
+    environment:
+      main_name: medrobustness_fully_correct_rate
+      main_split: test
+    taxonomy:
+      task: Classification
+      what: Assess robustness of clinical management decisions to medical terminology variants
+      who: Clinician
+      when: Any
       language: English
