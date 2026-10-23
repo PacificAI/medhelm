@@ -111,7 +111,7 @@ def test_paired_inversion_stats() -> None:
         # Same letter in both arms across a key change: kept, not fully correct.
         _paired("pair-2", "A", key="A", prediction="A"),
         _paired("pair-2", "B", key="B", prediction="A"),
-        # Different letters in each arm: not kept.
+        # Keys identical: kept not counted.
         _paired("pair-3", "A", key="C", prediction="A"),
         _paired("pair-3", "B", key="C", prediction="C"),
     ]
@@ -121,7 +121,7 @@ def test_paired_inversion_stats() -> None:
     assert stats["medgrounding_fully_correct_rate"] == pytest.approx(1 / 3)
     assert stats["medgrounding_arm_a_accuracy"] == pytest.approx(2 / 3)
     assert stats["medgrounding_arm_b_accuracy"] == pytest.approx(2 / 3)
-    assert stats["medgrounding_kept_rate"] == pytest.approx(1 / 3)
+    assert stats["medgrounding_kept_rate"] == pytest.approx(1 / 2)
     assert "medgrounding_wrong_move_rate" not in stats
 
 

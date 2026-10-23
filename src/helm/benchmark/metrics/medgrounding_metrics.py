@@ -135,7 +135,9 @@ class MedGroundingMetric(EvaluateInstancesMetric):
             stats["medgrounding_ascertain_rate"].add(arm.prediction == arm.ascertain_letter)
             stats["medgrounding_cannot_decide_rate"].add(arm.prediction == arm.cannot_decide_letter)
 
-        stats["medgrounding_kept_rate"].add(arm_a.prediction == arm_b.prediction)
+        # Kept: arm B keeps arm A's key when the keys differ (arm B should have answered differently)
+        if arm_a.key != arm_b.key:
+            stats["medgrounding_kept_rate"].add(arm_b.prediction == arm_a.key)
 
     def get_metadata(self) -> List[MetricMetadata]:
         return [
