@@ -14,7 +14,7 @@ _ANSWER_PATTERN = re.compile(r"(?<![A-Za-z])[A-G](?![A-Za-z])", re.IGNORECASE)
 # Explicit-marker patterns: "Answer: X", "answer is X", "the answer is X", "my answer: X", etc.
 # Must not be followed by "or" or another letter to be considered explicit.
 _EXPLICIT_MARKER_PATTERN = re.compile(
-    r"(?:answer|choice|option)\s*(?:is|:)\s*([A-G])(?!\s*or|\s*[A-Za-z])", re.IGNORECASE
+    r"(?<![A-Za-z])(?:answer|choice|option)\s*(?:is\s*:?|:)\s*([A-G])(?!\s*or|\s*[A-Za-z])", re.IGNORECASE
 )
 # Leading-answer patterns: "A.", "A)", "A:" at or near the start
 _LEADING_ANSWER_PATTERN = re.compile(r"^\s*([A-G])[\.\):]", re.IGNORECASE)

@@ -63,8 +63,16 @@ def _means(stats: List[Stat]) -> dict[str, float]:
         # Explanatory phrasing with explicit marker (main fix for P1)
         ("Answer: B. A is less likely because…", "B"),
         ("The answer is G. Here's why A doesn't work...", "G"),
+        # Colon after "is" (e.g. "answer is: C") is an explicit marker
+        ("the answer is: B", "B"),
+        ("The answer is: C. A is wrong", "C"),
+        ("answer is:B", "B"),
         # Ambiguous still returns X
         ("Answer: B or A", "X"),
+        # Markers embedded in another word must not count as explicit markers
+        ("thisoption: A, not B", "X"),
+        ("disanswer is B or C", "X"),
+        ("mychoice: D and also A", "X"),
     ],
 )
 def test_parse_medrobustness_answer(response: str, expected: str) -> None:
