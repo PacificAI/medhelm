@@ -164,6 +164,66 @@ def get_medrobustness_terminology_spec(data_path: str) -> RunSpec:
     return _get_medrobustness_spec("terminology", "pr26_scenarios.PR26TerminologyScenario", data_path)
 
 
+def _get_medgrounding_spec(scenario_name: str, scenario_class: str, data_path: str) -> RunSpec:
+    scenario_spec = ScenarioSpec(
+        class_name=f"helm.benchmark.scenarios.medgrounding.{scenario_class}",
+        args={"data_path": data_path},
+    )
+    # Reasoning models (e.g. gpt-5-mini) return an empty answer when the budget is spent on reasoning tokens.
+    adapter_spec = get_generation_adapter_spec(
+        instructions="",
+        max_tokens=5,
+        max_train_instances=0,
+        temperature=0,
+    )
+
+    metric_specs = [
+        MetricSpec(
+            class_name="helm.benchmark.metrics.medgrounding_metrics.MedGroundingMetric",
+            args={},
+        )
+    ] + get_basic_metric_specs([])
+
+    run_name = f"pg26_{scenario_name}"
+    return RunSpec(
+        name=run_name,
+        scenario_spec=scenario_spec,
+        adapter_spec=adapter_spec,
+        metric_specs=metric_specs,
+        groups=["PacificMedGrounding", run_name],
+    )
+
+
+@run_spec_function("pg26_ablation")
+def get_medgrounding_ablation_spec(data_path: str) -> RunSpec:
+    return _get_medgrounding_spec("ablation", "pg26_scenarios.PG26AblationScenario", data_path)
+
+
+@run_spec_function("pg26_abstention")
+def get_medgrounding_abstention_spec(data_path: str) -> RunSpec:
+    return _get_medgrounding_spec("abstention", "pg26_scenarios.PG26AbstentionScenario", data_path)
+
+
+@run_spec_function("pg26_contradiction")
+def get_medgrounding_contradiction_spec(data_path: str) -> RunSpec:
+    return _get_medgrounding_spec("contradiction", "pg26_scenarios.PG26ContradictionScenario", data_path)
+
+
+@run_spec_function("pg26_inversion")
+def get_medgrounding_inversion_spec(data_path: str) -> RunSpec:
+    return _get_medgrounding_spec("inversion", "pg26_scenarios.PG26InversionScenario", data_path)
+
+
+@run_spec_function("pg26_misfiled")
+def get_medgrounding_misfiled_spec(data_path: str) -> RunSpec:
+    return _get_medgrounding_spec("misfiled", "pg26_scenarios.PG26MisfiledScenario", data_path)
+
+
+@run_spec_function("pg26_staleness")
+def get_medgrounding_staleness_spec(data_path: str) -> RunSpec:
+    return _get_medgrounding_spec("staleness", "pg26_scenarios.PG26StalenessScenario", data_path)
+
+
 @run_spec_function("sct_bench")
 def get_sct_bench_spec(reason: bool = False, few_shot: bool = False) -> RunSpec:
     scenario_spec = ScenarioSpec(
