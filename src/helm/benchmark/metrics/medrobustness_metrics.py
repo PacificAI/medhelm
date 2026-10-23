@@ -1,6 +1,6 @@
 import re
 from dataclasses import dataclass
-from typing import Dict, List
+from typing import Dict, List, Tuple
 
 from helm.benchmark.adaptation.request_state import RequestState
 from helm.benchmark.metrics.evaluate_instances_metric import EvaluateInstancesMetric
@@ -11,11 +11,38 @@ from helm.benchmark.scenarios.scenario import CORRECT_TAG
 
 
 _ANSWER_PATTERN = re.compile(r"(?<![A-Za-z])[A-G](?![A-Za-z])", re.IGNORECASE)
+# Explicit-marker patterns: "Answer: X", "answer is X", "the answer is X", "my answer: X", etc.
+# Must not be followed by "or" or another letter to be considered explicit.
+_EXPLICIT_MARKER_PATTERN = re.compile(
+    r"(?:answer|choice|option)\s*(?:is|:)\s*([A-G])(?!\s*or|\s*[A-Za-z])", re.IGNORECASE
+)
+# Leading-answer patterns: "A.", "A)", "A:" at or near the start
+_LEADING_ANSWER_PATTERN = re.compile(r"^\s*([A-G])[\.\):]", re.IGNORECASE)
 SCORING_MODES = ("preserve", "invert", "control")
 
 
 def parse_medrobustness_answer(response: str) -> str:
-    """Return the single named answer letter, or X for an invalid response."""
+    """Return the single named answer letter, or X for an invalid response.
+
+    Uses explicit-marker precedence:
+    1. If response contains "answer is X" or similar explicit marker, use X.
+    2. If response starts with "X." or "X)", use X.
+    3. Otherwise, require exactly one standalone A-G letter in the entire response.
+    4. If ambiguous or absent, return "X".
+    """
+    response = response.strip()
+
+    # Check for explicit markers like "Answer: B" or "answer is C"
+    marker_match = _EXPLICIT_MARKER_PATTERN.search(response)
+    if marker_match:
+        return marker_match.group(1).upper()
+
+    # Check for leading answer like "A." or "B)"
+    leading_match = _LEADING_ANSWER_PATTERN.match(response)
+    if leading_match:
+        return leading_match.group(1).upper()
+
+    # Fall back to strict single-letter rule
     matches = _ANSWER_PATTERN.findall(response)
     return matches[0].upper() if len(matches) == 1 else "X"
 
@@ -65,7 +92,7 @@ class MedRobustnessMetric(EvaluateInstancesMetric):
         )
 
     @staticmethod
-    def _get_pair_info(request_state: RequestState) -> tuple:
+    def _get_pair_info(request_state: RequestState) -> Tuple[str, str, str]:
         extra_data = request_state.instance.extra_data
         if not extra_data:
             raise ValueError(f"Missing pairing metadata for instance '{request_state.instance.id}'")

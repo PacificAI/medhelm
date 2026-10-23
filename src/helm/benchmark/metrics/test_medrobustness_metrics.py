@@ -43,11 +43,28 @@ def _means(stats: List[Stat]) -> dict[str, float]:
 @pytest.mark.parametrize(
     ("response", "expected"),
     [
+        # Existing strict-rule tests (must still pass)
         ("A", "A"),
         ("Answer: c.", "C"),
         ("A or B", "X"),
         ("no answer", "X"),
         ("A A", "X"),
+        # New explicit-marker tests
+        ("Answer: B", "B"),
+        ("answer is A", "A"),
+        ("The answer is D", "D"),
+        ("my answer: E", "E"),
+        ("Choice: F", "F"),
+        ("option is G", "G"),
+        # New leading-answer tests
+        ("A. This is why...", "A"),
+        ("B) The correct answer", "B"),
+        ("C: Some explanation", "C"),
+        # Explanatory phrasing with explicit marker (main fix for P1)
+        ("Answer: B. A is less likely because…", "B"),
+        ("The answer is G. Here's why A doesn't work...", "G"),
+        # Ambiguous still returns X
+        ("Answer: B or A", "X"),
     ],
 )
 def test_parse_medrobustness_answer(response: str, expected: str) -> None:
