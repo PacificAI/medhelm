@@ -64,6 +64,33 @@ metrics:
     display_name: Predicted index
     description: Integer index of the reference (0, 1, ...) that was predicted by the model (for multiple-choice).
 
+  # zBench (record grounded healthcare facility reasoning):
+  - name: zbench_credit
+    display_name: zBench credit
+    short_display_name: zBench
+    description: Mean credit from the deterministic zBench grader, Pass 1, Half 0.5, otherwise 0, against the CDC source cell.
+    lower_is_better: false
+  - name: zbench_exact
+    display_name: zBench pass rate
+    description: Fraction of items graded Pass by the deterministic zBench grader.
+    lower_is_better: false
+  - name: zbench_abstain
+    display_name: zBench abstain rate
+    description: Fraction of items where the model declined to state a figure the source does not publish, graded Abstain.
+    lower_is_better: false
+  - name: zbench_fail
+    display_name: zBench fail rate
+    description: Fraction of items graded Fail (a figure that contradicts the source cell, or a substituted cell).
+    lower_is_better: true
+  - name: zbench_half
+    display_name: zBench half rate
+    description: Fraction of items graded Half (right figure, missing qualifier).
+    lower_is_better: false
+  - name: zbench_review
+    display_name: zBench review rate
+    description: Fraction of items the grader could not settle and flagged for review.
+    lower_is_better: true
+
   # Accuracy metrics:
   - name: exact_match
     display_name: Exact match
@@ -676,6 +703,24 @@ run_groups:
       - synt_family_disclosure
       - synt_right_of_access
       - synt_written_consent
+      - zbench_ivf
+
+  - name: zbench_ivf
+    display_name: zBench IVF
+    description: zBench IVF (zReports HealthCare Data Lab) tests record grounded reasoning about US healthcare facilities. 5,030 items on US fertility clinics are built from the CDC ART clinic files, every answer keyed to a government source cell, with a deterministic grader (Pass, Half, Abstain, Fail) and a held out split. Layers run from retrieval and value encoding through evidence, temporal and comparison discipline to cross record joins ([dataset](https://huggingface.co/datasets/shawnzreports/zbench-ivf), [code](https://github.com/zReports-Health/zbench)).
+    metric_groups:
+      - accuracy
+      - efficiency
+      - general_information
+    environment:
+      main_name: zbench_credit
+      main_split: test
+    taxonomy:
+      task: Question answering
+      what: Answer record grounded questions about US fertility clinic outcomes and services from CDC ART data
+      who: Health plan administrator, Benefits consultant, Patient
+      when: Any
+      language: English
 
   - name: sct_bench
     display_name: SCT-Bench
