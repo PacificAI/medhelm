@@ -21,6 +21,7 @@ For production MedHELM scenarios, see real implementations such as:
 - `dischargeme_scenario.py` — summarization (requires `[summarization]` extra)
 - `health_admin_bench_scenario.py` — computer-use HealthAdminBench wrap (see [HealthAdminBench](/health_admin_bench))
 - `physician_bench_scenario.py` — EHR agent wrap of PhysicianBench (see [PhysicianBench](physician_bench.md))
+- `clinicare_scenario.py` — agentic CliniCARE-Bench wrap, run through an external harness (see [CliniCARE-Bench](/clinicare))
 
 Run specs for MedHELM live in `src/helm/benchmark/run_specs/medhelm_run_specs.py`.
 

@@ -125,6 +125,8 @@ Then open http://localhost:8000 in your browser.
 
 HealthAdminBench (computer-use healthcare admin workflows) is a separate scenario from OpenAI HealthBench. See [HealthAdminBench](/health_admin_bench).
 
+CliniCARE-Bench (agentic clinical questions over MIMIC-IV, gated) runs each case as a full agent episode through the CliniCARE harness. See [CliniCARE-Bench](/clinicare).
+
 ---
 
 ## Clinician‑Validated Taxonomy

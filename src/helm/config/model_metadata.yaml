@@ -43,6 +43,14 @@ models:
     release_date: 2026-01-01
     tags: [TEXT_MODEL_TAG, FULL_FUNCTIONALITY_TEXT_MODEL_TAG]
 
+  - name: clinicare/harness
+    display_name: CliniCARE Harness
+    description: Internal routing deployment that runs (or replays) a CliniCARE-Bench agent episode. Leaderboard rows use the evaluated MedHELM model, not this name.
+    creator_organization_name: Helm
+    access: open
+    release_date: 2026-01-01
+    tags: [TEXT_MODEL_TAG, FULL_FUNCTIONALITY_TEXT_MODEL_TAG]
+
   # Adobe
   - name: adobe/giga-gan
     display_name: GigaGAN (1B)
@@ -648,6 +656,14 @@ models:
     creator_organization_name: Anthropic
     access: limited
     release_date: 2026-02-05
+    tags: [TEXT_MODEL_TAG, VISION_LANGUAGE_MODEL_TAG, LIMITED_FUNCTIONALITY_TEXT_MODEL_TAG, INSTRUCTION_FOLLOWING_MODEL_TAG]
+
+  - name: anthropic/claude-opus-5-5
+    display_name: Claude Opus 5.5
+    description: Claude Opus 5.5 is the first model in Anthropic's Claude 5.5 family, aimed at software engineering, agentic tasks and long-context reasoning.
+    creator_organization_name: Anthropic
+    access: limited
+    release_date: 2026-09-22
     tags: [TEXT_MODEL_TAG, VISION_LANGUAGE_MODEL_TAG, LIMITED_FUNCTIONALITY_TEXT_MODEL_TAG, INSTRUCTION_FOLLOWING_MODEL_TAG]
 
   - name: anthropic/claude-opus-4.6
@@ -1489,6 +1505,14 @@ models:
     release_date: 2026-02-19
     tags: [TEXT_MODEL_TAG, VISION_LANGUAGE_MODEL_TAG, AUDIO_LANGUAGE_MODEL_TAG, GOOGLE_GEMINI_MODEL_TAG, LIMITED_FUNCTIONALITY_TEXT_MODEL_TAG, INSTRUCTION_FOLLOWING_MODEL_TAG]
 
+  - name: google/gemini-3.8-flash
+    display_name: Gemini 3.8 Flash
+    description: Gemini 3.8 Flash is a fast, low-cost Gemini model aimed at long-horizon software engineering, autonomous agents and enterprise workflows.
+    creator_organization_name: Google
+    access: limited
+    release_date: 2026-09-02
+    tags: [TEXT_MODEL_TAG, VISION_LANGUAGE_MODEL_TAG, GOOGLE_GEMINI_MODEL_TAG, LIMITED_FUNCTIONALITY_TEXT_MODEL_TAG, INSTRUCTION_FOLLOWING_MODEL_TAG]
+
   - name: google/gemini-robotics-er-1.5-preview
     display_name: Gemini Robotics-ER 1.5
     description: Gemini Robotics-ER 1.5 is a vision-language model (VLM) designed for advanced reasoning in the physical world, allowing robots to interpret complex visual data, perform spatial reasoning, and plan actions from natural language commands.
@@ -1989,6 +2013,14 @@ models:
     num_parameters: 175000000000
     release_date: 2026-04-08
     tags:  [TEXT_MODEL_TAG, PARTIAL_FUNCTIONALITY_TEXT_MODEL_TAG, INSTRUCTION_FOLLOWING_MODEL_TAG]
+
+  - name: meta/muse-spark-1.3
+    display_name: Muse Spark 1.3
+    description: Muse Spark 1.3 is a Meta Superintelligence Labs model aimed at agentic, coding, instruction-following and long-context tasks.
+    creator_organization_name: Meta
+    access: limited
+    release_date: 2026-09-02
+    tags: [TEXT_MODEL_TAG, LIMITED_FUNCTIONALITY_TEXT_MODEL_TAG, INSTRUCTION_FOLLOWING_MODEL_TAG]
 
 
   - name: meta/opt-iml-175b # NOT SUPPORTED
@@ -3355,6 +3387,14 @@ models:
     release_date: 2026-03-27
     tags: [ TEXT_MODEL_TAG, VISION_LANGUAGE_MODEL_TAG, OPENAI_CHATGPT_MODEL_TAG, LIMITED_FUNCTIONALITY_TEXT_MODEL_TAG, INSTRUCTION_FOLLOWING_MODEL_TAG ]
 
+  - name: openai/gpt-6-astra
+    display_name: GPT-6 Astra
+    description: GPT-6 Astra is the first model in OpenAI's GPT-6 family, aimed at computer use, software engineering, science and professional work.
+    creator_organization_name: OpenAI
+    access: limited
+    release_date: 2026-09-03
+    tags: [TEXT_MODEL_TAG, VISION_LANGUAGE_MODEL_TAG, OPENAI_CHATGPT_MODEL_TAG, LIMITED_FUNCTIONALITY_TEXT_MODEL_TAG, INSTRUCTION_FOLLOWING_MODEL_TAG]
+
   - name: openai/whisper-1_gpt-4o-2024-11-20
     display_name: Whisper-1 + GPT-4o (2024-11-20)
     description: Transcribes the text with Whisper-1 and then uses GPT-4o to generate a response.
@@ -3895,6 +3935,15 @@ models:
     num_parameters: 235000000000
     release_date: 2025-07-21  # https://x.com/Alibaba_Qwen/status/1947344511988076547
     tags: [TEXT_MODEL_TAG, LIMITED_FUNCTIONALITY_TEXT_MODEL_TAG, INSTRUCTION_FOLLOWING_MODEL_TAG]
+
+  - name: qwen/qwen3.8-max-0902
+    display_name: Qwen3.8 Max (0902)
+    description: Qwen3.8 Max (0902) is a dated snapshot of Alibaba's closed-weight Qwen3.8 Max flagship, post-trained for coding and agent work.
+    creator_organization_name: Qwen
+    access: limited
+    num_parameters: 2400000000000
+    release_date: 2026-09-02
+    tags: [TEXT_MODEL_TAG, VISION_LANGUAGE_MODEL_TAG, LIMITED_FUNCTIONALITY_TEXT_MODEL_TAG, INSTRUCTION_FOLLOWING_MODEL_TAG]
 
   - name: qwen/qwen3-235b-a22b-thinking-2507
     display_name: Qwen3 235B A22B Thinking 2507
