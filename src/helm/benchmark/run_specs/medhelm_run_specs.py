@@ -2044,3 +2044,44 @@ def get_physician_bench_spec(
         metric_specs=metric_specs,
         groups=["physician_bench"],
     )
+
+
+@run_spec_function("zbench_ivf")
+def get_zbench_ivf_spec(condition: str = "closed", layers: Optional[Union[str, int]] = None) -> RunSpec:
+    """zBench IVF (zReports HealthCare Data Lab): record grounded healthcare facility reasoning on US fertility clinics,
+    built from the CDC ART clinic files. Category: Administration and Workflow.
+
+    medhelm-run --run-entries zbench_ivf:condition=closed,model=openai/gpt-5-2025-08-07 --suite custom --max-eval-instances 500
+    medhelm-run --run-entries zbench_ivf:condition=record,layers=1+2+6,model=openai/gpt-5-2025-08-07 --suite custom
+
+    `condition` is `closed` (no record shown) or `record` (the source cell shown in the prompt); `layers` keeps the listed
+    layers only, numbers joined by `+` because run entry arguments split on commas.
+    """
+    layers_arg = str(layers) if layers not in (None, "") else None
+    scenario_spec = ScenarioSpec(
+        class_name="helm.benchmark.scenarios.zbench_scenario.ZBenchIVFScenario",
+        args={"condition": condition, **({"layers": layers_arg} if layers_arg else {})},
+    )
+    adapter_spec = get_generation_adapter_spec(
+        instructions=(
+            "Answer the question about the healthcare facility record. Give the figure exactly as the source publishes "
+            "it, with any qualifier the source attaches (small sample, suppressed, no cycles); if the source publishes "
+            "no figure for the cell, say exactly what it does publish."
+        ),
+        input_noun=None,
+        newline_after_input_noun=False,
+        output_noun="Answer",
+        max_tokens=600,
+        max_train_instances=0,
+        stop_sequences=[],
+    )
+    metric_specs = [
+        MetricSpec(class_name="helm.benchmark.metrics.zbench_metrics.ZBenchMetric", args={})
+    ] + get_basic_metric_specs([])
+    return RunSpec(
+        name="zbench_ivf:condition=%s%s" % (condition, (",layers=" + layers_arg) if layers_arg else ""),
+        scenario_spec=scenario_spec,
+        adapter_spec=adapter_spec,
+        metric_specs=metric_specs,
+        groups=["zbench_ivf"],
+    )
