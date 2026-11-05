@@ -707,7 +707,7 @@ run_groups:
 
   - name: zbench_ivf
     display_name: zBench IVF
-    description: zBench IVF (zReports HealthCare Data Lab) tests record grounded reasoning about US healthcare facilities. 5,030 items on US fertility clinics are built from the CDC ART clinic files, every answer keyed to a government source cell, with a deterministic grader (Pass, Half, Abstain, Fail) and a held out split. Layers run from retrieval and value encoding through evidence, temporal and comparison discipline to cross record joins ([dataset](https://huggingface.co/datasets/shawnzreports/zbench-ivf), [code](https://github.com/zReports-Health/zbench)).
+    description: zBench IVF (zReports HealthCare Data Lab) tests record grounded reasoning about US healthcare facilities. Release 1.2 holds 5,144 items on US fertility clinics built from the CDC ART clinic files, every answer keyed to a government source cell, with a deterministic grader (Pass, Half, Abstain, Fail); the 4,139 public items are evaluated here and the 1,005 held out items are not distributed. Layers run from retrieval and value encoding through evidence, temporal and comparison discipline to cross record joins ([dataset](https://huggingface.co/datasets/shawnzreports/zbench-ivf), [code](https://github.com/zReports-Health/zbench)).
     metric_groups:
       - accuracy
       - efficiency

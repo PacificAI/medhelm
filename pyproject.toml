@@ -61,6 +61,7 @@ dependencies = [
     "torch>=1.13.1,<3.0.0", # For huggingface_client, yalm_tokenizer, model_summac (via summarization_metrics)
     "torchvision>=0.14.1,<3.0.0", # For huggingface_client, yalm_tokenizer, model_summac (via summarization_metrics)
     "tiktoken~=0.7",
+    "regex>=2024.4",  # zbench_grader (the grader's rules use lookbehind and Unicode classes the stdlib re lacks)
 ]
 
 [project.optional-dependencies]

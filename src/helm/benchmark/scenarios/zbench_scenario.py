@@ -1,8 +1,10 @@
 """zBench IVF: record-grounded healthcare facility reasoning (zReports HealthCare Data Lab).
 
-5,144 tasks generated from CDC's clinic-level ART success-rate tables (2020 to 2022); every answer key is a cell of
-the public
-record with a row locator that re-derives it from the published file; grading is deterministic (see zbench_metrics.py).
+Release zbench-ivf-1.2: 5,144 tasks generated from CDC's clinic-level ART success-rate tables (2020 to 2022), of which
+4,139 are public and 1,005 are held out. This integration loads the public file only (every instance goes to
+TEST_SPLIT); the held-out split is not distributed and is not part of this scenario. Every answer key is a cell of the
+public record with a row locator that re-derives it from the published file; grading is deterministic (see
+zbench_metrics.py).
 Benchmark page: https://api.zreports.org/lab/zbench. Dataset: https://huggingface.co/datasets/shawnzreports/zbench-ivf.
 MedHELM category: Administration and Workflow (facility records, reporting periods, measures), not clinical decision
 support.
@@ -18,12 +20,27 @@ import os
 import re
 from typing import Any, Dict, List, Optional, Set, Union
 
-from helm.benchmark.scenarios.scenario import CORRECT_TAG, TEST_SPLIT, Input, Instance, Output, Reference, Scenario
+from helm.benchmark.presentation.taxonomy_info import TaxonomyInfo
+from helm.benchmark.scenarios.scenario import (
+    CORRECT_TAG,
+    TEST_SPLIT,
+    Input,
+    Instance,
+    Output,
+    Reference,
+    Scenario,
+    ScenarioMetadata,
+)
 from helm.common.general import ensure_directory_exists
 
 HF_REPO = "shawnzreports/zbench-ivf"
 HF_REVISION = "03a2611888784cd7de9f6463235dc01bdabc6c5b"  # the dataset commit that completed release zbench-ivf-1.2
 RELEASE = "zbench-ivf-1.2"
+RELEASE_COUNTS = {
+    "items": 5144,
+    "public": 4139,
+    "held_out": 1005,
+}  # from the release manifest; public is what loads here
 RECORD_PREFIX = (
     "Answer from the CDC record supplied below. Give the figure exactly as CDC publishes it, with its qualifier "
     "(small sample, suppressed, no cycles) when the record carries one; do not substitute another year, age band or "
@@ -106,6 +123,30 @@ class ZBenchIVFScenario(Scenario):
     )
     tags = ["healthcare", "facility_records", "question_answering", "administration_and_workflow"]
 
+    def get_metadata(self) -> ScenarioMetadata:
+        return ScenarioMetadata(
+            name="zbench_ivf",
+            display_name="zBench IVF",
+            short_display_name="zBench IVF",
+            description=(
+                "zBench IVF (zReports HealthCare Data Lab) tests record grounded reasoning about US healthcare "
+                "facilities: {public:,} public items on US fertility clinics built from the CDC ART clinic files (2020 to "
+                "2022), every answer keyed to a government source cell, graded deterministically (Pass, Half, Abstain, "
+                "Fail, Review). The {held_out:,} held-out items are not part of this scenario. "
+                "[dataset](https://huggingface.co/datasets/shawnzreports/zbench-ivf), "
+                "[code](https://github.com/zReports-Health/zbench)."
+            ).format(public=RELEASE_COUNTS["public"], held_out=RELEASE_COUNTS["held_out"]),
+            taxonomy=TaxonomyInfo(
+                task="Question answering",
+                what="Answer record grounded questions about US fertility clinic outcomes and services from CDC ART data",
+                who="Health plan administrator, Benefits consultant, Patient",
+                when="Any",
+                language="English",
+            ),
+            main_metric="zbench_credit",
+            main_split=TEST_SPLIT,
+        )
+
     def __init__(self, condition: str = "closed", layers: Optional[Union[str, int]] = None):
         super().__init__()
         if condition not in ("closed", "record"):
@@ -116,6 +157,7 @@ class ZBenchIVFScenario(Scenario):
     def _download(self, output_path: str) -> Dict[str, Optional[str]]:
         """The release's public and neighbours files, pinned to the dataset revision, cached under output_path."""
         from huggingface_hub import hf_hub_download  # a dependency of `datasets`, which HELM already requires
+        from huggingface_hub.errors import EntryNotFoundError
 
         data_path = os.path.join(output_path, "data")
         ensure_directory_exists(data_path)
@@ -126,8 +168,8 @@ class ZBenchIVFScenario(Scenario):
             neighbours: Optional[str] = hf_hub_download(
                 HF_REPO, RELEASE + "-neighbours.jsonl", repo_type="dataset", revision=HF_REVISION, cache_dir=data_path
             )
-        except Exception:  # optional: without it the grader runs but does not label substitutions
-            neighbours = None
+        except EntryNotFoundError:  # the one expected case: a release without a neighbours file; the grader then runs
+            neighbours = None  # without substitution labels. Network, auth and revision errors surface.
         return {"public": public, "neighbours": neighbours}
 
     def instances_from_items(self, items: List[Dict[str, Any]]) -> List[Instance]:

@@ -56,3 +56,45 @@ def test_parse_layers():
     assert parse_layers(3) == {3}
     with pytest.raises(ValueError):
         parse_layers("none")
+
+
+def test_verdict_precedence():
+    """Review #59: a hard fail outranks a clarifying question and a late hedge; only an explicit up-front
+    'could not find' abstention outranks a hard fail."""
+    item = item_from_record(
+        {
+            **RECORD,
+            "id": "IVF-V2-L2-TEST-SUPPRESSED",
+            "answer_key": "*/9 (suppressed numerator, small sample)",
+            "form": "suppressed_part",
+            "rules": {
+                "pass_all": ["\\*\\s*/\\s*9"],
+                "half_any": [],
+                "fail_any": [],
+                # a stated numerator for the suppressed cell is a figure the record cannot support
+                "fail_hard": ["(?<count>\\b[1-9]\\s*/\\s*9\\b)"],
+            },
+            "cells": [{"y": 2021, "b": "35-37", "m": "intended retrievals to live births", "v": "*/9", "n": 40}],
+        }
+    )
+    # unsupported figure stated as the answer, then a clarifying question: Fail, not Abstain
+    v = grade(item, "CDC reports 4/9 for that band. Do you want the 2021 or the 2022 reporting year?")
+    assert v["verdict"] == "Fail", v
+    # unsupported figure, then a late hedge: still Fail
+    v = grade(item, "The 2021 cell shows 5/9 for that band. That said, I cannot give the figure with certainty.")
+    assert v["verdict"] == "Fail", v
+    # explicit up-front abstention, with a figure mentioned later as context: Abstain
+    v = grade(
+        item,
+        "I couldn't find this cell, so I can't give you the figure or the sample size. What I did find: a directory "
+        "page lists 4/9 for 2022, which I am not presenting as CDC's 2021 number.",
+    )
+    assert v["verdict"] == "Abstain", v
+    # a clarifying question with no figure at all: Abstain
+    assert grade(item, "Do you want the 2021 or the 2022 reporting year?")["verdict"] == "Abstain"
+
+
+def test_metadata():
+    md = ZBenchIVFScenario().get_metadata()
+    assert md.name == "zbench_ivf" and md.main_metric == "zbench_credit" and md.main_split == "test"
+    assert md.taxonomy is not None and md.taxonomy.task == "Question answering"

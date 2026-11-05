@@ -5,7 +5,9 @@ checked against 717 stored answers of the reference grader.
 zBench deterministic grader, Python port of zReports' reference grader (JavaScript, grader version 5k).
 
 An item carries its own rules (regular expressions written by the generator from the record's cells); the grader applies
-them in a fixed order: hard fail (a figure the record cannot support) -> clarifying question or abstention -> Pass ->
+them in a fixed order: explicit up-front abstention (the answer opens by saying the figure could not be found or
+confirmed, within its first 400 characters) -> hard fail (a figure the record cannot support) -> clarifying question or
+other abstention -> Pass ->
 Half
 -> Fail -> Review.
 Every figure in the answer is compared against the clinic's neighbouring cells and labelled by the row it came from.
@@ -13,6 +15,13 @@ Every figure in the answer is compared against the clinic's neighbouring cells a
 The port keeps the reference implementation's structure and regular expressions; upstream, ``tests/test_parity.py``
 checks it
 against the reference grader's reading of 700+ stored model answers (verdict, reason, signals and substitution labels).
+
+Why the up-front abstention outranks the hard fail: a model that opens with "I could not find this cell, so I cannot
+give the figure" and then lists what it did find (another year's cell, a directory's number) has declined to answer; the
+later figures are context it labels itself, not a claim, so the verdict is Abstain. A clarifying question, or a late
+"cannot give the figure", does NOT outrank a hard fail: an unsupported figure stated as the answer is a Fail even when
+the answer also asks a question or hedges afterwards. The reference harness's 717 stored verdicts grade identically
+under this rule (``tests/test_parity.py`` upstream); ``test_zbench_scenario.py`` covers both sides of it here.
 
 Public API: ``plain``, ``signals``, ``substitutions``, ``auto_verdict``, ``grade``.
 """
@@ -685,7 +694,7 @@ def _hard_fail(
     return {"hard": None, "match": None, "disclaimed": disclaimed}
 
 
-def _abstention(a: str, passes: bool) -> dict[str, str] | None:
+def _abstention(a: str, passes: bool) -> dict[str, Any] | None:
     for m in _matches(ABSTAIN, a, "gi"):
         win = a[m.start() : m.start() + 160]
         near = a[max(0, m.start() - 120) : m.start() + 160]
@@ -696,11 +705,11 @@ def _abstention(a: str, passes: bool) -> dict[str, str] | None:
         if cm and _test(TURN, win[: cm.start()]):
             continue
         if m.start() < 400 and (_test(NOT_FOUND, m.group(0)) or _test(NOT_FOUND, win)):
-            return {"reason": "the model says it could not find or confirm the figure"}
+            return {"reason": "the model says it could not find or confirm the figure", "up_front": True}
         if passes or _test(RECORD_NEGATIVE, win):
             continue
         if not _test(CONFIRM, a) or (m.start() < 160 and not figure_before):
-            return {"reason": "the model says it cannot give the figure"}
+            return {"reason": "the model says it cannot give the figure", "up_front": False}
     return None
 
 
@@ -721,11 +730,16 @@ def auto_verdict(
     hard, hard_m, disclaimed = hf["hard"], hf["match"], hf["disclaimed"]
     pass_all = r.get("pass_all") or []
     passes = (not hard) and bool(pass_all) and all(test(p) for p in pass_all)
-    if not passes and _test(CLARIFY, a) and len(a) < 1200:
-        return {"verdict": "Abstain", "reason": "asked a clarifying question instead of answering"}
+    # Precedence (see the module docstring): an explicit up-front "could not find or confirm" abstention outranks a hard
+    # fail; a clarifying question or any other abstention does not.
     ab = _abstention(a, passes)
-    if ab:
+    if ab and ab["up_front"]:
         return {"verdict": "Abstain", "reason": ab["reason"]}
+    if not hard:
+        if not passes and _test(CLARIFY, a) and len(a) < 1200:
+            return {"verdict": "Abstain", "reason": "asked a clarifying question instead of answering"}
+        if ab:
+            return {"verdict": "Abstain", "reason": ab["reason"]}
     if hard:
         g = hard_m.groupdict() if hard_m else {}
         count, flagged, cost = g.get("count") is not None, g.get("flag") is not None, g.get("cost") is not None
