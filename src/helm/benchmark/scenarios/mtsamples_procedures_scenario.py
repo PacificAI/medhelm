@@ -1,6 +1,8 @@
 import os
-import requests
 from typing import List
+from urllib.parse import quote
+import requests
+
 from helm.benchmark.presentation.taxonomy_info import TaxonomyInfo
 from helm.benchmark.scenarios.scenario import (
     Scenario,
@@ -57,20 +59,17 @@ class MTSamplesProceduresScenario(Scenario):
         return [file["name"] for file in files if file["name"].endswith(".txt")]
 
     def download_file(self, file_name: str, output_dir: str) -> str:
-        """
-        Downloads a text file from GitHub and saves it locally.
-        """
-        file_url = self.RAW_BASE_URL + file_name
+        """Downloads a text file from GitHub and saves it locally."""
+        # Encode special characters while preserving directory separators
+        encoded_file_name = quote(file_name, safe="/")
+        file_url = self.RAW_BASE_URL + encoded_file_name
         file_path = os.path.join(output_dir, file_name)
-
-        if not os.path.exists(file_path):  # Avoid redundant downloads
-            response = requests.get(file_url)
-            if response.status_code != 200:
-                raise Exception(f"Failed to download {file_url}")
-
+        if not os.path.exists(file_path):
+            response = requests.get(file_url, timeout=30)
+            response.raise_for_status()
+            os.makedirs(os.path.dirname(file_path) or output_dir, exist_ok=True)
             with open(file_path, "w", encoding="utf-8") as f:
                 f.write(response.text)
-
         return file_path
 
     def extract_sections(self, text: str) -> tuple:

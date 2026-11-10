@@ -2,7 +2,7 @@ import os
 import pytest
 from tempfile import TemporaryDirectory
 from typing import List
-
+import requests
 from helm.benchmark.scenarios.mtsamples_procedures_scenario import MTSamplesProceduresScenario
 from helm.benchmark.scenarios.scenario import CORRECT_TAG, TEST_SPLIT
 
@@ -28,6 +28,10 @@ class _FakeResponse:
 
     def json(self):
         return self._json_data
+
+    def raise_for_status(self):
+        if self.status_code >= 400:
+            raise requests.HTTPError(f"HTTP {self.status_code}")
 
 
 def _make_requests_get(responses_by_url, recorded_calls=None):
@@ -255,13 +259,14 @@ def test_download_file_raises_on_http_error(monkeypatch):
     scenario = MTSamplesProceduresScenario()
     file_name = "missing.txt"
     raw_url = MTSamplesProceduresScenario.RAW_BASE_URL + file_name
+
     monkeypatch.setattr(
         "helm.benchmark.scenarios.mtsamples_procedures_scenario.requests.get",
         _make_requests_get({raw_url: _FakeResponse(status_code=404)}),
     )
 
     with TemporaryDirectory() as tmpdir:
-        with pytest.raises(Exception, match="Failed to download"):
+        with pytest.raises(requests.HTTPError, match="HTTP 404"):
             scenario.download_file(file_name, tmpdir)
 
 
