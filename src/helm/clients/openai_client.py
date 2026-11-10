@@ -387,7 +387,7 @@ class OpenAIClient(CachingClient):
                 )
             # The OpenAI chat completion API doesn't support echo.
             # If `echo_prompt` is true, combine the prompt and completion.
-            raw_completion_content = raw_completion["message"]["content"]
+            raw_completion_content = raw_completion["message"]["content"] or ""
             if self.output_processor:
                 raw_completion_content = self.output_processor(raw_completion_content)
             text: str = request.prompt + raw_completion_content if request.echo_prompt else raw_completion_content
