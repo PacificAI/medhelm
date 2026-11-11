@@ -1,5 +1,6 @@
 import json
 import re
+import time
 from dataclasses import dataclass
 from string import Template
 from typing import Dict, Optional, TypedDict, Union, Callable, Any, Set
@@ -9,6 +10,7 @@ from helm.benchmark.annotation.annotator import Annotator
 from helm.clients.auto_client import AutoClient
 from helm.common.hierarchical_logger import hlog, hwarn
 from helm.common.request import Request
+from helm.common.response_format import ResponseFormat
 
 
 class AnnotatorResponseParseFailure(Exception):
@@ -188,6 +190,18 @@ class LLMAsJuryAnnotator(Annotator):
         Recursively validate the annotation meets expected criteria.
         """
 
+        def score_is_float(score_value: Any, score_path: str) -> bool:
+            try:
+                float(score_value)
+            except (TypeError, ValueError):
+                hwarn(
+                    f"Invalid score at '{score_path}'. "
+                    f"Expected a float-compatible value, got {score_value!r} "
+                    f"from {annotator_name}."
+                )
+                return False
+            return True
+
         def validate(schema: Dict[str, Any], data: Dict[str, Any], path: str = "") -> bool:
             for key, expected in schema.items():
                 current_path = f"{path}.{key}" if path else key
@@ -197,6 +211,10 @@ class LLMAsJuryAnnotator(Annotator):
                     return False
 
                 value = data[key]
+
+                if key == "score" and not isinstance(expected, (dict, list, set)):
+                    if not score_is_float(value, current_path):
+                        return False
 
                 # Case 1: nested dict → recurse
                 if isinstance(expected, dict):
@@ -212,6 +230,20 @@ class LLMAsJuryAnnotator(Annotator):
                         if subkey not in value:
                             hwarn(f"Missing subkey '{current_path}.{subkey}' " f"in response from {annotator_name}.")
                             return False
+                        if subkey == "score" and not score_is_float(value[subkey], f"{current_path}.{subkey}"):
+                            return False
+
+                # Case 2b: set of required subkeys
+                elif isinstance(expected, set):
+                    if not isinstance(value, dict):
+                        hwarn(f"Expected dict at '{current_path}' but got {type(value)} " f"from {annotator_name}.")
+                        return False
+                    for subkey in expected:
+                        if subkey not in value:
+                            hwarn(f"Missing subkey '{current_path}.{subkey}' " f"in response from {annotator_name}.")
+                            return False
+                        if subkey == "score" and not score_is_float(value[subkey], f"{current_path}.{subkey}"):
+                            return False
 
                 # Case 3: type checking (optional but useful)
                 elif isinstance(expected, type):
@@ -226,6 +258,15 @@ class LLMAsJuryAnnotator(Annotator):
             return True
 
         return validate(self._annotation_criteria, annotator_criteria)
+
+    def make_json_serializable(self, obj):
+        if isinstance(obj, set):
+            return [self.make_json_serializable(item) for item in obj]
+        if isinstance(obj, dict):
+            return {key: self.make_json_serializable(value) for key, value in obj.items()}
+        if isinstance(obj, (list, tuple)):
+            return [self.make_json_serializable(item) for item in obj]
+        return obj
 
     def annotate(self, request_state: RequestState) -> Dict[str, Any]:
         """
@@ -255,20 +296,174 @@ class LLMAsJuryAnnotator(Annotator):
 
         # Annotate using multiple models
         for annotator_name, annotator_model_info in self._annotator_models.items():
-            try:
-                annotator_criteria = self._annotate_with_model(annotator_prompt, annotator_model_info, annotator_name)
+            max_attempts = 3
+            retry_delays = [1, 2, 4]
 
-                if annotator_criteria is not None:
-                    annotations[annotator_name] = annotator_criteria
-                else:
+            for attempt in range(1, max_attempts + 1):
+                current_prompt = annotator_prompt
+                if attempt > 1:
+                    current_prompt += """
+
+        IMPORTANT: Your previous response was not valid JSON.
+
+        For this attempt:
+        - Return ONLY valid JSON.
+        - USE **double quotes** (") for all keys and string values. DO NOT use single quotes (').
+        - Ensure all keys and values are properly quoted and separated by commas.
+        - Ensure all opening braces {{ have corresponding closing braces }}.
+        - Ensure all opening brackets [ have corresponding closing brackets ].
+        - Ensure all strings are properly escaped.
+        - Do NOT use markdown code fences.
+        - Do NOT include explanations or additional text.
+        - The entire response must be a single valid JSON object.
+        - Make sure all strings, quotes, commas, and braces are valid JSON syntax that folows the JSON Structure of the Output Format explained above.
+
+        """
+                    delay = retry_delays[attempt - 2]
+                    hlog(
+                        f"Retrying annotation for {annotator_name} in {delay}s "
+                        f"(attempt {attempt}/{max_attempts})"
+                        f"prompt: {current_prompt}"
+                    )
+                    time.sleep(delay)
+
+                try:
+                    annotator_criteria = self._annotate_with_model(
+                        current_prompt,
+                        annotator_model_info,
+                        annotator_name,
+                    )
+
+                    if annotator_criteria is not None:
+                        try:
+                            annotations[annotator_name] = annotator_criteria
+                            break
+                        except (json.JSONDecodeError, TypeError):
+                            hlog(
+                                f"WARNING invalid JSON from {annotator_name} "
+                                f"(attempt {attempt}/{max_attempts})"
+                                f"response: {annotator_criteria}"
+                            )
+                    else:
+                        hlog(
+                            f"WARNING annotation returned None for {annotator_name} "
+                            f"(attempt {attempt}/{max_attempts})"
+                            f"prompt: {current_prompt}"
+                        )
+
+                except Exception as e:
+                    hlog(
+                        f"ERROR annotating with {annotator_name} "
+                        f"(attempt {attempt}/{max_attempts}): {e}"
+                        f"prompt: {current_prompt}"
+                    )
+
+                if attempt == max_attempts:
                     failed_counts[annotator_name] += 1
-
-            except Exception as e:
-                hlog(f"ERROR annotating with {annotator_name}: {e}")
-                failed_counts[annotator_name] += 1
 
         hlog(f"Failed model annotations: {failed_counts}")
         return annotations
+
+    def build_json_schema(self, annotation_criteria: Union[Dict[str, Any], Set[str]]) -> dict:
+        """Build a JSON Schema from annotation criteria.
+
+        Supported formats:
+        - Set[str]: each criterion gets numeric score and string explanation fields.
+        - Dict[str, Set[str] | list[str]]: each criterion gets the listed fields.
+        - Dict[str, type]: each key is a top-level field with the declared type.
+        - Dict[str, dict]: each criterion is a nested object; value types are
+        inferred from the example values.
+        """
+
+        print(f"Building JSON Schema from annotation criteria: {annotation_criteria}")
+        type_map = {
+            str: "string",
+            bool: "boolean",
+            int: "integer",
+            float: "number",
+        }
+
+        if isinstance(annotation_criteria, set):
+            criteria = sorted(annotation_criteria)
+            properties = {
+                criterion: {
+                    "type": "object",
+                    "properties": {
+                        "score": {"type": "number"},
+                        "explanation": {"type": "string"},
+                    },
+                    "required": ["score", "explanation"],
+                    "additionalProperties": False,
+                }
+                for criterion in criteria
+            }
+
+        elif isinstance(annotation_criteria, dict):
+            properties = {}
+
+            for name, spec in annotation_criteria.items():
+                # Top-level field with an explicit Python type.
+                if spec is str or spec is bool or spec is int or spec is float:
+                    properties[name] = {"type": type_map[spec]}
+                    continue
+
+                # Nested criterion with a set/list of field names.
+                if isinstance(spec, (set, list)):
+                    fields = sorted(spec) if isinstance(spec, set) else list(spec)
+                    criterion_properties = {
+                        field: {"type": "number" if field == "score" else "string"} for field in fields
+                    }
+
+                # Nested criterion with field example values.
+                elif isinstance(spec, dict):
+                    fields = list(spec)
+                    criterion_properties = {}
+
+                    for field, example in spec.items():
+                        if field == "score":
+                            field_type = "number"
+                        elif isinstance(example, bool):
+                            field_type = "boolean"
+                        elif isinstance(example, int):
+                            field_type = "integer"
+                        elif isinstance(example, float):
+                            field_type = "number"
+                        elif isinstance(example, str):
+                            field_type = "string"
+                        elif isinstance(example, list):
+                            field_type = "array"
+                        elif isinstance(example, dict):
+                            field_type = "object"
+                        elif example is None:
+                            raise ValueError(f"Cannot infer a schema type from None for {name}.{field}")
+                        else:
+                            raise ValueError(
+                                f"Unsupported example type for {name}.{field}: " f"{type(example).__name__}"
+                            )
+
+                        criterion_properties[field] = {"type": field_type}
+
+                else:
+                    raise ValueError(f"Unsupported annotation specification for {name!r}: " f"{spec!r}")
+
+                properties[name] = {
+                    "type": "object",
+                    "properties": criterion_properties,
+                    "required": fields,
+                    "additionalProperties": False,
+                }
+
+        else:
+            raise ValueError("annotation_criteria must be a dict or set, " f"got {type(annotation_criteria).__name__}")
+
+        json_schema = {
+            "type": "object",
+            "properties": properties,
+            "required": list(properties),
+            "additionalProperties": False,
+        }
+        print(f"Built JSON Schema: {json.dumps(json_schema, indent=2)}")
+        return json_schema
 
     def _annotate_with_model(
         self, prompt: str, model_info: AnnotatorModelInfo, annotator_name: str
@@ -281,12 +476,15 @@ class LLMAsJuryAnnotator(Annotator):
         :param annotator_name: Name of the annotator
         :return: Annotation criteria or None if failed
         """
+        print(f"Annotating with {model_info}")
         annotator_request = Request(
             model=model_info.model_name,
             model_deployment=model_info.model_deployment,
             prompt=prompt,
             temperature=0.0,
             max_tokens=4096,
+            response_format=ResponseFormat(json_schema=self.build_json_schema(self._annotation_criteria)),
+            # Ensure the model responds with JSON
         )
 
         annotator_response = self._auto_client.make_request(annotator_request)
@@ -297,7 +495,9 @@ class LLMAsJuryAnnotator(Annotator):
 
         try:
             annotator_output = annotator_response.completions[0].text
+            print(f"Raw model output from {model_info.model_name}: {annotator_output}")
             annotator_output = self._preprocessor(annotator_output)
+            print(f"Preprocessed model output from {model_info.model_name}: {annotator_output}")
 
             try:
                 annotator_criteria = json.loads(annotator_output)
@@ -323,6 +523,10 @@ class LLMAsJuryAnnotator(Annotator):
 
             # Validate annotation structure
             if not self._validate_annotation(annotator_criteria, annotator_name):
+                hwarn(
+                    f"Annotation from {model_info.model_name} did not meet expected criteria. "
+                    f"Model output: {annotator_output}"
+                )
                 return None
 
             return annotator_criteria

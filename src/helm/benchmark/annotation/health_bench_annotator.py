@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 # The following code includes templates and evaluation logic reproduced with minor modifications from:
 # https://github.com/openai/simple-evals/blob/main/healthbench_eval.py
 #
@@ -24,10 +25,10 @@
 # SOFTWARE.
 import json
 import re
-from typing import Dict, Any, Optional, Set, Union, List
+from typing import Dict, Any, Optional, Union, List
 
-from helm.benchmark.annotation.model_as_judge import AnnotatorModelInfo, LLMAsJuryAnnotator
 from helm.benchmark.adaptation.request_state import RequestState
+from helm.benchmark.annotation.model_as_judge import AnnotatorModelInfo, LLMAsJuryAnnotator
 from helm.clients.auto_client import AutoClient
 from helm.common.hierarchical_logger import hwarn, hlog
 
@@ -80,6 +81,10 @@ In other words, for criteria with negative points, a good response should be cla
 
 # Final instruction
 Return just the json object in markdown format. Do not include any other text in the response.
+{
+  "explanation": "text.",
+  "criteria_met": false
+}
 """.strip()
 EVAL_PROMPT = """
 You are a medical expert evaluator.
@@ -129,12 +134,29 @@ Score the LLM response on a scale from 1 to 10, where:
 
 ### Output Format (STRICT)
 
-Return your answer as a JSON object:
+ALWAYS respond with exactly one valid JSON object. Do not include Markdown, code fences, or any additional text or commentary.
+
+The JSON object MUST contain exactly these two fields:
+
+- `"criteria_met"`: an integer from **1 to 10**, inclusive. Do NOT return a boolean, string, float, or nested object.
+- `"explanation"`: a string containing a brief, evidence-based explanation supporting the assigned score.
+
+Use this exact structure:
 
 {
-  "criteria_met": <integer from 1 to 10>,
-  "explanation": "<brief explanation of why this score was assigned>"
+  "criteria_met": 8,
+  "explanation": "The response satisfies most requirements of the criterion but omits one relevant detail."
 }
+
+### Scoring Rules
+- **1**: Completely fails to satisfy the criterion.
+- **2–3**: Satisfies very few requirements.
+- **4–5**: Partially satisfies the criterion, with significant omissions.
+- **6–7**: Mostly satisfies the criterion, with some omissions.
+- **8–9**: Satisfies the criterion well, with only minor omissions.
+- **10**: Fully satisfies all requirements of the criterion.
+
+Evaluate the response strictly against the specified criterion. Base the score on evidence in the response, not assumptions. Ensure that `"criteria_met"` is always a valid JSON integer between 1 and 10 and that both fields are present.
 
 ---
 
@@ -161,7 +183,15 @@ def parse_json_safe(text: str) -> dict:
         return {}
 
 
-ANNOTATION_CRITERIA: Dict[str, Set[str]] = {"explanation": set(), "criteria_met": {"true", "false"}}
+ANNOTATION_CRITERIA = {
+    "explanation": str,
+    "criteria_met": bool,
+}
+
+ANNOTATION_CRITERIA_EVAL = {
+    "explanation": str,
+    "criteria_met": int,
+}
 
 
 def calculate_score(rubric_items: List[dict], graded_responses: List[dict]) -> Optional[float]:
@@ -244,7 +274,7 @@ class HealthBenchAnnotator(LLMAsJuryAnnotator):
                 annotator_prompt = self._prompt_template.replace("<<conversation>>", convo_str).replace(
                     "<<rubric_item>>", str(rubric_item)
                 )
-
+                print(f"Annotator prompt: {annotator_prompt}")
                 try:
                     annotator_criteria = self._annotate_with_model(
                         annotator_prompt,
@@ -327,6 +357,7 @@ class HealthBenchProfessionalAnnotator(LLMAsJuryAnnotator):
         grading_responses: List[dict] = []
 
         for annotator_name, annotator_model_info in self._annotator_models.items():
+            self._annotation_criteria = ANNOTATION_CRITERIA
             if instance.extra_data is None or "rubrics" not in instance.extra_data:
                 hlog(
                     f"Instance {instance.id} is missing rubric information, skipping annotation for annotator {annotator_name}"
@@ -338,6 +369,7 @@ class HealthBenchProfessionalAnnotator(LLMAsJuryAnnotator):
                 annotator_prompt = self._prompt_template.replace("<<conversation>>", convo_str).replace(
                     "<<rubric_item>>", str(rubric_item)
                 )
+                print(f"Annotator prompt: {annotator_prompt}")
 
                 try:
                     annotator_criteria = self._annotate_with_model(
@@ -364,11 +396,14 @@ class HealthBenchProfessionalAnnotator(LLMAsJuryAnnotator):
             physician_response = instance.extra_data.get("physician_response", None)
             if physician_response is not None:
                 try:
+                    self._annotation_criteria = ANNOTATION_CRITERIA_EVAL
+                    print(f"annotation_criteria ev: {self._annotation_criteria}")
                     eval_prompt = (
                         EVAL_PROMPT.replace("<<user_message>>", convo_str)
                         .replace("<<llm_response>>", model_output_text)
                         .replace("<<physician_response>>", physician_response)
                     )
+                    print(f"Evaluation prompt: {eval_prompt}")
                     evaluation_criteria = self._annotate_with_model(
                         eval_prompt,
                         annotator_model_info,
