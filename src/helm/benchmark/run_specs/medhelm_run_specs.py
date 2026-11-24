@@ -1259,6 +1259,34 @@ def get_pubmed_qa_spec() -> RunSpec:
     )
 
 
+@run_spec_function("cpc_qa")
+def get_cpc_qa_spec(data_path: str) -> RunSpec:
+    scenario_spec = ScenarioSpec(
+        class_name="helm.benchmark.scenarios.cpc_qa_scenario.CPCQAScenario", args={"data_path": data_path}
+    )
+
+    adapter_spec = get_multiple_choice_adapter_spec(
+        method=ADAPT_MULTIPLE_CHOICE_JOINT,
+        instructions=(
+            "Read the case presentation and then answer the question about the "
+            "diagnosis or about medical knowledge. "
+            "Do not include any explanation or additional text. "
+            "Output only the letter on a single line."
+        ),
+        input_noun=None,
+        output_noun="Answer",
+        max_train_instances=0,
+    )
+
+    return RunSpec(
+        name="cpc_qa",
+        scenario_spec=scenario_spec,
+        adapter_spec=adapter_spec,
+        metric_specs=get_exact_match_metric_specs(),
+        groups=["cpc_qa"],
+    )
+
+
 @run_spec_function("ehr_sql")
 def get_ehr_sql_run_spec() -> RunSpec:
     """
