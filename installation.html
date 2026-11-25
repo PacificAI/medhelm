@@ -184,6 +184,14 @@ python3.12 <span class="nt">-m</span> venv .venv
 <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>pip <span class="nb">install</span> <span class="s2">"medhelm[summarization,gated]"</span>
 </code></pre></div></div>
 
+<h3 id="physicianbench-physician-bench">PhysicianBench (<code class="language-plaintext highlighter-rouge">[physician-bench]</code>)</h3>
+
+<p>Adds the EHR-agent scenario (<code class="language-plaintext highlighter-rouge">physician_bench</code>). This extra is <strong>not</strong> on PyPI as a standalone product: you also need a sibling <a href="https://github.com/healthrex/PhysicianBench">PhysicianBench</a> checkout, Docker, and the FHIR image. Full install, configure, and run instructions (one task or all 100) are in <a href="physician_bench.md">PhysicianBench</a>.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>uv pip <span class="nb">install</span> <span class="nt">-e</span> <span class="s2">".[physician-bench]"</span>
+uv pip <span class="nb">install</span> <span class="nt">-e</span> /path/to/PhysicianBench
+</code></pre></div></div>
+
 <h2 id="summary">Summary</h2>
 
 <table>
@@ -214,6 +222,11 @@ python3.12 <span class="nt">-m</span> venv .venv
       <td><strong>All tiers</strong></td>
       <td><code class="language-plaintext highlighter-rouge">pip install "medhelm[summarization,gated]"</code></td>
       <td>All of the above (install once, run any scenario)</td>
+    </tr>
+    <tr>
+      <td><strong>PhysicianBench</strong></td>
+      <td><code class="language-plaintext highlighter-rouge">uv pip install -e ".[physician-bench]"</code> plus sibling checkout</td>
+      <td>EHR-agent tasks; see <a href="physician_bench.md">PhysicianBench</a></td>
     </tr>
   </tbody>
 </table>

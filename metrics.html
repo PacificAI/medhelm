@@ -292,6 +292,16 @@
 
 <p>Evaluate a single generation against reference labels.</p>
 
+<h2 id="physician_bench_metrics"><code class="language-plaintext highlighter-rouge">physician_bench_metrics</code></h2>
+
+<p>Metrics for PhysicianBench episode scores.</p>
+
+<h3 id="physicianbenchmetric"><code class="language-plaintext highlighter-rouge">PhysicianBenchMetric</code></h3>
+
+<p>Unpack PhysicianBench score JSON from the episode completion.</p>
+
+<h4 id="evaluate_generationadapter_spec-adapterspec-request_state-requeststate-metric_service-metricservice-eval_cache_path-str---liststat-7"><code class="language-plaintext highlighter-rouge">evaluate_generation(adapter_spec: AdapterSpec, request_state: RequestState, metric_service: MetricService, eval_cache_path: str) -&gt; List[Stat]</code></h4>
+
 <h2 id="sct_bench_metrics"><code class="language-plaintext highlighter-rouge">sct_bench_metrics</code></h2>
 
 <h3 id="sctbenchmetric"><code class="language-plaintext highlighter-rouge">SCTBenchMetric</code></h3>
@@ -300,7 +310,7 @@
 
 <p>Computes two metrics: - sct_score: Normalized expert panel weight for the model’s chosen rating (0 to 1). - sct_expert_set_membership: Whether the model’s response falls within the expert agreement region (binary, averaged across instances).</p>
 
-<h4 id="evaluate_generationadapter_spec-adapterspec-request_state-requeststate-metric_service-metricservice-eval_cache_path-str---liststat-7"><code class="language-plaintext highlighter-rouge">evaluate_generation(adapter_spec: AdapterSpec, request_state: RequestState, metric_service: MetricService, eval_cache_path: str) -&gt; List[Stat]</code></h4>
+<h4 id="evaluate_generationadapter_spec-adapterspec-request_state-requeststate-metric_service-metricservice-eval_cache_path-str---liststat-8"><code class="language-plaintext highlighter-rouge">evaluate_generation(adapter_spec: AdapterSpec, request_state: RequestState, metric_service: MetricService, eval_cache_path: str) -&gt; List[Stat]</code></h4>
 
 <h2 id="summarization_metrics"><code class="language-plaintext highlighter-rouge">summarization_metrics</code></h2>
 
@@ -317,7 +327,7 @@
   <li>Faithfulness (SummaC)</li>
 </ol>
 
-<h4 id="evaluate_generationadapter_spec-adapterspec-request_state-requeststate-metric_service-metricservice-eval_cache_path-str---liststat-8"><code class="language-plaintext highlighter-rouge">evaluate_generation(adapter_spec: AdapterSpec, request_state: RequestState, metric_service: MetricService, eval_cache_path: str) -&gt; List[Stat]</code></h4>
+<h4 id="evaluate_generationadapter_spec-adapterspec-request_state-requeststate-metric_service-metricservice-eval_cache_path-str---liststat-9"><code class="language-plaintext highlighter-rouge">evaluate_generation(adapter_spec: AdapterSpec, request_state: RequestState, metric_service: MetricService, eval_cache_path: str) -&gt; List[Stat]</code></h4>
 
 <h2 id="ultra_suite_asr_classification_metrics"><code class="language-plaintext highlighter-rouge">ultra_suite_asr_classification_metrics</code></h2>
 
@@ -326,6 +336,16 @@
 <p>Score metrics for UltraSuite ASR.</p>
 
 <h4 id="evaluate_instancesrequest_states-listrequeststate-eval_cache_path-str---liststat-2"><code class="language-plaintext highlighter-rouge">evaluate_instances(request_states: List[RequestState], eval_cache_path: str) -&gt; List[Stat]</code></h4>
+
+<h2 id="zbench_metrics"><code class="language-plaintext highlighter-rouge">zbench_metrics</code></h2>
+
+<p>The deterministic zBench grader as HELM stats (see zbench_grader.py, vendored from zReports-Health/zbench).</p>
+
+<h3 id="zbenchmetric"><code class="language-plaintext highlighter-rouge">ZBenchMetric</code></h3>
+
+<p>Stats: zbench_exact (Pass), zbench_credit (Pass 1, Half 0.5), zbench_abstain, zbench_fail, zbench_half, zbench_review.</p>
+
+<h4 id="evaluate_generationadapter_spec-adapterspec-request_state-requeststate-metric_service-metricservice-eval_cache_path-str---liststat-10"><code class="language-plaintext highlighter-rouge">evaluate_generation(adapter_spec: AdapterSpec, request_state: RequestState, metric_service: MetricService, eval_cache_path: str) -&gt; List[Stat]</code></h4>
 
       </div>
     </main>

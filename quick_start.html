@@ -132,6 +132,25 @@ uv run helm-summarize <span class="nt">--suite</span> board_exams
 uv run helm-server <span class="nt">--suite</span> board_exams
 </code></pre></div></div>
 
+<h2 id="physicianbench-ehr-agent">PhysicianBench (EHR agent)</h2>
+
+<p>Requires a sibling PhysicianBench checkout, Docker, and the FHIR image. See <a href="physician_bench.md">PhysicianBench</a> for install, API keys, and how to run <strong>one task</strong> vs <strong>all 100</strong>.</p>
+
+<p>From <code class="language-plaintext highlighter-rouge">medhelm/</code> after <code class="language-plaintext highlighter-rouge">uv pip install -e ".[physician-bench]"</code>:</p>
+
+<div class="language-sh highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nb">export </span><span class="nv">PHYSICIAN_BENCH_ROOT</span><span class="o">=</span>/path/to/PhysicianBench
+
+<span class="c"># one named task</span>
+.venv/bin/medhelm-run <span class="nt">--run-entries</span> <span class="se">\</span>
+  <span class="s2">"physician_bench:task_ids=aortic_aneurysm_cad,max_steps=30,reasoning_effort=medium,model=openai/gpt-5-mini,model_deployment=openai/gpt-5-mini"</span> <span class="se">\</span>
+  <span class="nt">--suite</span> pb-poc <span class="nt">--max-eval-instances</span> 1 <span class="nt">--num-threads</span> 1
+
+<span class="c"># all 100 v1 tasks (omit task_ids)</span>
+.venv/bin/medhelm-run <span class="nt">--run-entries</span> <span class="se">\</span>
+  <span class="s2">"physician_bench:reasoning_effort=medium,model=openai/gpt-5-mini,model_deployment=openai/gpt-5-mini"</span> <span class="se">\</span>
+  <span class="nt">--suite</span> pb-poc <span class="nt">--max-eval-instances</span> 100 <span class="nt">--num-threads</span> 1
+</code></pre></div></div>
+
 <h2 id="summary">Summary</h2>
 
 <table>
@@ -157,6 +176,11 @@ uv run helm-server <span class="nt">--suite</span> board_exams
       <td><strong>Gated</strong></td>
       <td><code class="language-plaintext highlighter-rouge">uv pip install "medhelm[gated]"</code></td>
       <td>MedQA, MedMCQA (Drive)</td>
+    </tr>
+    <tr>
+      <td><strong>PhysicianBench</strong></td>
+      <td><code class="language-plaintext highlighter-rouge">uv pip install -e ".[physician-bench]"</code> plus sibling checkout</td>
+      <td>EHR-agent tasks; see <a href="physician_bench.md">PhysicianBench</a></td>
     </tr>
   </tbody>
 </table>

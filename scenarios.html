@@ -801,6 +801,16 @@ Answer:
 }
 </code></pre></div></div>
 
+<h2 id="physician_bench_scenario"><code class="language-plaintext highlighter-rouge">physician_bench_scenario</code></h2>
+
+<p>PhysicianBench scenario: one MedHELM instance per EHR agent task.</p>
+
+<h3 id="physicianbenchscenariopb_root-str---version-str--default_task_version-task_ids-str---max_steps-str---fhir_image-str---port-str---reasoning_effort-str---temperature-str--"><code class="language-plaintext highlighter-rouge">PhysicianBenchScenario(pb_root: str = '', version: str = DEFAULT_TASK_VERSION, task_ids: str = '', max_steps: str = '', fhir_image: str = '', port: str = '', reasoning_effort: str = '', temperature: str = '')</code></h3>
+
+<p>Wrap PhysicianBench v1 task folders as MedHELM instances.</p>
+
+<p>One instance = one task episode (Docker FHIR + MiniAgent + all pytest checkpoints for that task). <code class="language-plaintext highlighter-rouge">--max-eval-instances</code> caps how many tasks run.</p>
+
 <h2 id="pubmed_qa_scenario"><code class="language-plaintext highlighter-rouge">pubmed_qa_scenario</code></h2>
 
 <h3 id="pubmedqascenario"><code class="language-plaintext highlighter-rouge">PubMedQAScenario</code></h3>
@@ -1055,6 +1065,22 @@ B. No, not all Jews are Jews.
 C. No, only some are Jews.
 Answer:
 </code></pre></div></div>
+
+<h2 id="zbench_scenario"><code class="language-plaintext highlighter-rouge">zbench_scenario</code></h2>
+
+<p>zBench IVF: record-grounded healthcare facility reasoning (zReports HealthCare Data Lab).</p>
+
+<p>Release zbench-ivf-1.2: 5,144 tasks generated from CDC’s clinic-level ART success-rate tables (2020 to 2022), of which 4,139 are public and 1,005 are held out. This integration loads the public file only (every instance goes to TEST_SPLIT); the held-out split is not distributed and is not part of this scenario. Every answer key is a cell of the public record with a row locator that re-derives it from the published file; grading is deterministic (see zbench_metrics.py). Benchmark page: <a href="https://api.zreports.org/lab/zbench">https://api.zreports.org/lab/zbench</a>. Dataset: <a href="https://huggingface.co/datasets/shawnzreports/zbench-ivf">https://huggingface.co/datasets/shawnzreports/zbench-ivf</a>. MedHELM category: Administration and Workflow (facility records, reporting periods, measures), not clinical decision support.</p>
+
+<p>Conditions</p>
+
+<p>closed the question alone record the clinic’s own CDC cells printed under the question (the control for evidence access)</p>
+
+<p>Layers: <code class="language-plaintext highlighter-rouge">layers=1+2+6</code> keeps those layers only (HELM run entries split on commas, so <code class="language-plaintext highlighter-rouge">+</code> separates the numbers).</p>
+
+<h3 id="zbenchivfscenariocondition-str--closed-layers-optionalunionstr-int--none"><code class="language-plaintext highlighter-rouge">ZBenchIVFScenario(condition: str = 'closed', layers: Optional[Union[str, int]] = None)</code></h3>
+
+<p>zBench IVF: questions generated from CDC’s clinic-level ART tables; every answer key is a CDC row.</p>
 
       </div>
     </main>
