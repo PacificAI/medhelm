@@ -169,7 +169,9 @@ export default function LeaderboardTable({
         <td
           key={`${idx}-${cellIdx}`}
           className={`${cellIdx % 2 === 0 ? "bg-gray-50" : "bg-white"} ${
-            cellIdx === 0 ? "px-4 sticky top-0" : ""
+            cellIdx === 0
+              ? "px-4 sticky top-0 !whitespace-normal break-words"
+              : ""
           } w-32`}
         >
           {cellIdx == 1 ? (
@@ -204,7 +206,7 @@ export default function LeaderboardTable({
                   : ""
               } ${
                 cellIdx === 0
-                  ? "underline decoration-dashed decoration-gray-300 z-20"
+                  ? "underline decoration-dashed decoration-gray-300 z-20 whitespace-normal break-words"
                   : "z-0"
               }`}
             >
