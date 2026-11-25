@@ -148,3 +148,15 @@ Upload `$SITE_ROOT` to your host or map nginx locations to each version folder a
 
 The static site cam be hosted with AWS s3 Static Syte and AWS CloudFront.
 
+## 8. Update the homepage leaders
+
+The landing page does not read the exported leaderboard. After each release, update the **Current leaders** panel in [docs/index.html](docs/index.html) so it matches the latest table.
+
+Update only the leader rows and the footer:
+
+- Model name, organization, description, and run link
+- Mean win rate, including the version label (for example, `Mean win rate v6.0.0`)
+- Footer count and date (for example, `10 of 14 models · Updated 23 Nov 2026`)
+
+Leave the surrounding markup and styles unchanged.
+
