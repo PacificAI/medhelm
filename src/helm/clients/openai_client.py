@@ -40,7 +40,8 @@ class OpenAIClientUtils:
 
     # Error OpenAI throws when the image in the prompt violates their content policy
     HARMFUL_INFORMATION_ERROR: str = (
-        "Invalid prompt: we've limited access to this content for safety reasons. This type of information may be used to benefit or to harm people."  # noqa: E501
+        "Invalid prompt: we've limited access to this content for safety reasons. This type of information may be used to benefit or to harm people."
+        # noqa: E501
     )
     INAPPROPRIATE_IMAGE_ERROR: str = "Your input image may contain content that is not allowed by our safety system"
     INAPPROPRIATE_PROMPT_ERROR: str = "Invalid prompt: your prompt was flagged"
@@ -165,6 +166,21 @@ class OpenAIClient(CachingClient):
             if "messages" in cache_key:
                 del cache_key["messages"]
         return cache_key
+
+    def _chat_response_has_message_text(self, response: Dict[str, Any]) -> bool:
+        choices = response.get("choices")
+        if not isinstance(choices, list) or not choices:
+            return False
+        for choice in choices:
+            if not isinstance(choice, dict):
+                return False
+            if choice.get("finish_reason") == "content_filter":
+                continue
+            message = choice.get("message")
+            content = message.get("content") if isinstance(message, dict) else None
+            if content is None or not str(content).strip():
+                return False
+        return True
 
     def _make_embedding_request(self, request: Request) -> RequestResult:
         raw_request: Dict[str, Any]
@@ -387,7 +403,8 @@ class OpenAIClient(CachingClient):
                 )
             # The OpenAI chat completion API doesn't support echo.
             # If `echo_prompt` is true, combine the prompt and completion.
-            raw_completion_content = raw_completion["message"]["content"]
+            # raw_completion_content = raw_completion["message"]["content"]
+            raw_completion_content = raw_completion["message"].get("content") or ""
             if self.output_processor:
                 raw_completion_content = self.output_processor(raw_completion_content)
             text: str = request.prompt + raw_completion_content if request.echo_prompt else raw_completion_content

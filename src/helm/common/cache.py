@@ -1,6 +1,6 @@
 from collections import defaultdict
 from dataclasses import dataclass
-from typing import Dict, Callable, Generator, Mapping, Tuple
+from typing import Dict, Callable, Generator, Mapping, Tuple, Optional
 import json
 import threading
 
@@ -182,20 +182,23 @@ class Cache(object):
         else:
             raise ValueError(f"CacheConfig with unknown type: {config}")
 
-    def get(self, request: Mapping, compute: Callable[[], Dict]) -> Tuple[Dict, bool]:
-        """Get the result of `request` (by calling `compute` as needed)."""
+    def get(
+        self,
+        request: Mapping,
+        compute: Callable[[], Dict],
+        accept: Optional[Callable[[Dict], bool]] = None,
+    ) -> Tuple[Dict, bool]:
         cache_stats.increment_query(self.config.cache_stats_key)
 
-        # TODO: Initialize key_value_store in constructor
         with create_key_value_store(self.config) as key_value_store:
-            response = key_value_store.get(request)
-            if response:
-                cached = True
-            else:
-                cached = False
-                cache_stats.increment_compute(self.config.cache_stats_key)
-                # Compute and commit the request/response to SQLite
-                response = compute()
+            stored = key_value_store.get(request)
+            if stored and (accept is None or accept(stored)):
+                return stored, True
 
+            cache_stats.increment_compute(self.config.cache_stats_key)
+            response = compute()
+            if accept is None or accept(response):
                 write_to_key_value_store(key_value_store, request, response)
-        return response, cached
+            elif stored:
+                key_value_store.remove(request)
+            return response, False
