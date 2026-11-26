@@ -1,3 +1,6 @@
+---
+layout: null
+---
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -8,6 +11,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap"
           rel="stylesheet">
+    <link rel="stylesheet" href="{{ '/assets/css/home-header.css' | relative_url }}">
     <style>
   :root {
     --bg: #FFFFFF;
@@ -62,74 +66,6 @@
   }
 
   .container { max-width: 1160px; margin: 0 auto; padding: 0 40px; }
-
-  /* ============ TOP NAV ============ */
-  .topbar {
-    border-bottom: 1px solid rgba(0,0,0,0.08);
-    position: sticky;
-    top: 0;
-    z-index: 100;
-    backdrop-filter: saturate(180%) blur(20px);
-    -webkit-backdrop-filter: saturate(180%) blur(20px);
-    background-color: rgba(255, 255, 255, 0.82);
-  }
-  .topbar-inner {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    height: 64px;
-  }
-  .wordmark {
-    display: inline-flex;
-    align-items: center;
-    gap: 10px;
-    color: var(--ink);
-    font-family: var(--sans);
-    font-weight: 700;
-    font-size: 22px;
-    letter-spacing: -0.03em;
-    line-height: 1;
-  }
-  .wordmark .mark {
-    height: 32px;
-    width: 32px;
-    display: block;
-    flex-shrink: 0;
-  }
-  .wordmark .name { display: inline-block; }
-  .nav { display: flex; align-items: center; gap: 28px; }
-  .nav a {
-    font-size: 14px;
-    color: var(--ink-soft);
-    font-weight: 500;
-    letter-spacing: 0.01em;
-  }
-  .nav a:hover { color: var(--teal-deep); text-decoration: none; }
-  .nav .gh-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    background: var(--ink);
-    border: 1.5px solid var(--ink);
-    padding: 8px 18px;
-    font-size: 13px;
-    font-weight: 600;
-    letter-spacing: -0.01em;
-    color: #FFFFFF;
-    border-radius: var(--radius-pill);
-    transition: background var(--dur-fast) var(--ease),
-                border-color var(--dur-fast) var(--ease),
-                transform var(--dur-fast) var(--ease),
-                box-shadow var(--dur-fast) var(--ease);
-  }
-  .nav .gh-btn:hover {
-    background: var(--teal-deep);
-    border-color: var(--teal-deep);
-    color: #FFFFFF;
-    transform: translateY(-1px);
-    box-shadow: var(--shadow-md);
-    text-decoration: none;
-  }
 
   /* ============ HERO ============ */
   .hero {
@@ -851,7 +787,7 @@
     box-shadow: var(--shadow-md);
     text-decoration: none;
   }
-  .qs-docs-link a:last-child:hover {
+  .qs-docs-link a:last-child:not(:first-child):hover {
     border-color: var(--ink);
     background: var(--bg-elev);
     transform: translateY(-1px);
@@ -882,6 +818,7 @@
   #contribute .section-head {
     grid-template-columns: 1fr 1fr;
   }
+  #contribute .qs-docs-link { margin: 0 0 28px; }
   .contrib-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
@@ -1178,13 +1115,13 @@
 
   /* Secondary buttons: subtle border on dark background */
   [data-theme="dark"] .btn-secondary,
-  [data-theme="dark"] .qs-docs-link a:last-child {
+  [data-theme="dark"] .qs-docs-link a:last-child:not(:first-child) {
     color: var(--ink);
     border-color: rgba(255,255,255,0.18);
     background: transparent;
   }
   [data-theme="dark"] .btn-secondary:hover,
-  [data-theme="dark"] .qs-docs-link a:last-child:hover {
+  [data-theme="dark"] .qs-docs-link a:last-child:not(:first-child):hover {
     background: rgba(255,255,255,0.06);
     border-color: rgba(255,255,255,0.4);
   }
@@ -1318,24 +1255,7 @@
 <body>
 <a class="skip-link" href="#main">Skip to main content</a>
 
-<!-- ============ TOP NAV ============ -->
-<header class="topbar">
-    <div class="container topbar-inner">
-        <a href="/" class="wordmark">
-            <img src="assets/images/medhelm_logo.jpg" alt="MedHELM" height="44"/>
-            <span class="name">MedHELM</span>
-        </a>
-        <nav class="nav">
-            <a href="/">Home</a>
-            <a href="https://leaderboard.medhelm.org/#/leaderboard" rel="noopener" target="_blank">Leaderboard</a>
-            <a href="/installation">Docs</a>
-            <a href="/tutorial">Tutorials</a>
-            <a href="/benchmark">Tests</a>
-            <a href="/reproducing_leaderboards">Benchmarks</a>
-            <a href="https://github.com/PacificAI/medhelm" class="gh-btn">GitHub &#8599;</a>
-        </nav>
-    </div>
-</header>
+{% include home_header.html %}
 
 <main id="main">
 
@@ -1849,6 +1769,10 @@
                     MedHELM is Apache 2.0 and open to contributions from any institution. The benchmark grows through
                     new datasets, refined evaluation methods, and reported issues from clinical research teams.
                 </div>
+              </div>
+
+            <div class="qs-docs-link">
+                <a href="/contribute/">Contribute to MedHELM &#8599;</a>
             </div>
 
             <div class="contrib-grid">

@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  {% include theme_head.html %}
+  <title>{{ page.title }} | {{ site.title }}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ '/assets/css/style.css' | relative_url }}">
+  <link rel="stylesheet" href="{{ '/assets/css/home-header.css' | relative_url }}">
+  <style>
+    :root { --ink: #1D1D1F; --ink-soft: #6E6E73; --teal: #0A7EA4; --teal-deep: #005F80; --sans: 'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif; --radius-pill: 980px; --dur-fast: 150ms; --ease: cubic-bezier(0.4, 0, 0.2, 1); --shadow-md: 0 8px 24px rgba(0,0,0,0.09), 0 2px 6px rgba(0,0,0,0.05); }
+    html[data-theme="dark"] { --ink: #F5F5F7; --ink-soft: #A1A1A6; --teal: #2DC4F0; --teal-deep: #0A9FCC; }
+    body { font-family: var(--sans); }
+  </style>
+</head>
+<body>
+  {% include home_header.html %}
+  <main class="site-main">
+    <div class="main-inner">
+      {{ content }}
+    </div>
+  </main>
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <a href="{{ site.repo_url }}">GitHub</a>
+      <span>MedHELM – Holistic Evaluation of Language Models</span>
+    </div>
+  </footer>
+</body>
+</html>

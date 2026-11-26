@@ -1,0 +1,346 @@
+<style>
+  .site-main:has(.mh-collaborate) .main-inner { max-width: 1060px; }
+
+  .mh-collaborate {
+    --collab-text: #162830;
+    --collab-muted: #405760;
+    --collab-link: #075c70;
+    --collab-line: #cedde0;
+    --collab-tint: #edf6f7;
+    --collab-panel: #102e38;
+    --collab-panel-text: #f2fbfc;
+    --collab-panel-muted: #b8d8de;
+    color: var(--collab-text);
+    font-size: 1rem;
+    line-height: 1.55;
+  }
+
+  html[data-theme="dark"] .mh-collaborate {
+    --collab-text: #edf5f7;
+    --collab-muted: #bbccd0;
+    --collab-link: #9ddce7;
+    --collab-line: #3b5056;
+    --collab-tint: #222f33;
+  }
+
+  :is(.site-main, #contribute) .mh-collaborate :is(h1, h2, h3, p, ul, ol, pre) { margin: 0; }
+  :is(.site-main, #contribute) .mh-collaborate .collab-title {
+    font-size: clamp(2.6rem, 6.1vw, 5rem);
+    line-height: 1.01;
+    letter-spacing: -.065em;
+    text-wrap: balance;
+  }
+  :is(.site-main, #contribute) .mh-collaborate .collab-stage-title {
+    font-size: clamp(1.65rem, 4vw, 2.4rem);
+    line-height: 1.15;
+    letter-spacing: -.035em;
+  }
+  .mh-collaborate p { max-width: 66ch; color: var(--collab-muted); }
+  :is(.site-main, #contribute) .mh-collaborate a { color: var(--collab-link); text-underline-offset: .2em; }
+  .mh-collaborate :is(a, summary, pre):focus-visible {
+    outline: 2px solid var(--collab-link);
+    outline-offset: 4px;
+  }
+  .mh-collaborate [id] { scroll-margin-top: 5rem; }
+
+  .mh-collaborate .collab-hero {
+    display: grid;
+    grid-template-columns: minmax(0, 1.45fr) minmax(0, 1fr);
+    align-items: center;
+    gap: clamp(1.5rem, 5vw, 4rem);
+    padding: clamp(1.5rem, 5vw, 3.5rem);
+    background: var(--collab-tint);
+    border: 1px solid var(--collab-line);
+    border-radius: 1.35rem;
+  }
+  :is(.site-main, #contribute) .mh-collaborate .collab-intro { margin-top: 1.15rem; font-size: 1.09rem; }
+  .mh-collaborate .collab-actions {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: .65rem 1.1rem;
+    margin-top: 1.35rem;
+  }
+  :is(.site-main, #contribute) .mh-collaborate .collab-button {
+    display: inline-flex;
+    align-items: center;
+    min-height: 2.8rem;
+    padding: .55rem 1rem;
+    border-radius: .55rem;
+    background: #07566a;
+    color: #fff;
+    font-weight: 650;
+    text-decoration: none;
+  }
+  :is(.site-main, #contribute) .mh-collaborate .collab-button:hover { background: #0b4354; text-decoration: none; }
+  .mh-collaborate .collab-text-link { font-weight: 650; }
+
+  .mh-collaborate .collab-path {
+    padding: 1.2rem 1.35rem;
+    border-radius: .9rem;
+    background: var(--collab-panel);
+    color: var(--collab-panel-text);
+  }
+  :is(.site-main, #contribute) .mh-collaborate .collab-path ol { padding-left: 1.35rem; }
+  .mh-collaborate .collab-path li { padding: .75rem 0 .75rem .35rem; }
+  .mh-collaborate .collab-path li + li { border-top: 1px solid #36545d; }
+  .mh-collaborate .collab-path li::marker { color: var(--collab-panel-muted); font-weight: 700; }
+  :is(.site-main, #contribute) .mh-collaborate .collab-path a { color: var(--collab-panel-text); font-weight: 650; }
+  .mh-collaborate .collab-path a:focus-visible { outline-color: var(--collab-panel-muted); }
+  .mh-collaborate .collab-path span { display: block; color: var(--collab-panel-muted); font-size: .9rem; }
+
+  .mh-collaborate .collab-stage {
+    display: grid;
+    grid-template-columns: minmax(10rem, 1fr) minmax(0, 2.55fr);
+    gap: 1rem clamp(1.5rem, 5vw, 3.5rem);
+    padding-block: 2rem;
+    border-bottom: 1px solid var(--collab-line);
+  }
+  .mh-collaborate .collab-stage-body { display: grid; gap: .9rem; min-width: 0; }
+  :is(.site-main, #contribute) .mh-collaborate :is(ul, ol) { padding-left: 1.2rem; }
+  .mh-collaborate :is(.collab-task-list, .collab-submit-list) li + li { margin-top: .5rem; }
+  .mh-collaborate .collab-resources {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: .35rem .95rem;
+  }
+
+  .mh-collaborate .collab-exercises { display: grid; gap: .65rem; }
+  .mh-collaborate .collab-exercise {
+    min-width: 0;
+    border: 1px solid var(--collab-line);
+    border-radius: .75rem;
+    background: var(--bg, #fff);
+  }
+  .mh-collaborate .collab-exercise[open] { border-color: var(--collab-link); }
+  .mh-collaborate .collab-exercise summary {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: .6rem;
+    padding: .95rem 1rem;
+    cursor: pointer;
+    list-style: none;
+    border-radius: .75rem;
+  }
+  .mh-collaborate .collab-exercise summary::-webkit-details-marker { display: none; }
+  .mh-collaborate .collab-exercise summary:hover { background: var(--collab-tint); }
+  .mh-collaborate .collab-exercise summary::after {
+    content: "";
+    width: .5rem;
+    height: .5rem;
+    margin: 0 .2rem .25rem 0;
+    border-right: 2px solid var(--collab-link);
+    border-bottom: 2px solid var(--collab-link);
+    transform: rotate(45deg);
+  }
+  .mh-collaborate .collab-exercise[open] summary::after { transform: rotate(225deg); margin-bottom: 0; }
+  .mh-collaborate .collab-exercise-title { display: block; font-size: 1.06rem; }
+  .mh-collaborate .collab-exercise-subtitle { display: block; color: var(--collab-muted); font-size: .89rem; }
+  .mh-collaborate .collab-exercise-body {
+    display: grid;
+    gap: .85rem;
+    padding: 1rem;
+    border-top: 1px solid var(--collab-line);
+  }
+  :is(.site-main, #contribute) .mh-collaborate .collab-command {
+    padding: .9rem 1rem;
+    border-radius: .5rem;
+    background: var(--collab-panel);
+    color: var(--collab-panel-text);
+  }
+  .mh-collaborate :is(p, li) code { overflow-wrap: anywhere; }
+
+  .mh-collaborate .collab-after {
+    display: grid;
+    gap: .65rem;
+    padding: 1rem 1.15rem;
+    background: var(--collab-tint);
+    border-radius: .75rem;
+  }
+  .mh-collaborate .collab-public { padding-top: 1.35rem; }
+
+  @media (max-width: 700px) {
+    .mh-collaborate .collab-hero, .mh-collaborate .collab-stage { grid-template-columns: minmax(0, 1fr); }
+    .mh-collaborate .collab-stage { padding-block: 1.5rem; }
+  }
+
+  @media print {
+    .mh-collaborate .collab-exercise { break-inside: avoid; }
+  }
+</style>
+
+<article class="mh-collaborate" aria-labelledby="collab-title">
+  <header class="collab-hero">
+    <div>
+      {% if include.embedded %}<h2 class="collab-title" id="collab-title">Contribute to MedHELM</h2>{% else %}<h1 class="collab-title" id="collab-title">Contribute to MedHELM</h1>{% endif %}
+      <p class="collab-intro">Help improve how we evaluate AI on medical tasks. If you’d like to work with a maintainer on a dataset, evaluation, or tooling improvement, start with a short orientation and a test exercise contribution.</p>
+      <div class="collab-actions">
+        <a class="collab-button" href="#orientation">Start orientation</a>
+        <a class="collab-text-link" href="#test">See the test options</a>
+      </div>
+    </div>
+
+    <nav class="collab-path" aria-label="Contribution steps">
+      <ol>
+        <li><a href="#orientation">Get oriented</a><span>Read the guides and pick a focus.</span></li>
+        <li><a href="#best-practices">Review the workflow</a><span>Plan a run someone else can verify.</span></li>
+        <li><a href="#test">Complete one test</a><span>Choose browser actions, rubric-based judging, or exact match.</span></li>
+        <li><a href="#submit">Submit your contribution</a><span>A maintainer reviews your submission.</span></li>
+      </ol>
+    </nav>
+  </header>
+
+  <section class="collab-stage" id="orientation" aria-labelledby="orientation-title">
+    {% if include.embedded %}<h3 class="collab-stage-title" id="orientation-title">Get oriented</h3>{% else %}<h2 class="collab-stage-title" id="orientation-title">Get oriented</h2>{% endif %}
+    <div class="collab-stage-body">
+      <p>MedHELM evaluates language models on clinical and healthcare workflows. Skim the project overview and contributing guide, then pick an area you’d like to work on.</p>
+      <ul class="collab-task-list">
+        <li><strong>Benchmarks and datasets.</strong> Assess a public dataset or help integrate a new scenario.</li>
+        <li><strong>Metrics and clinical review.</strong> Review a scoring rule, rubric, or realistic workflow.</li>
+        <li><strong>Engineering and docs.</strong> Reproduce a bug or improve test coverage, tooling, or setup instructions.</li>
+      </ul>
+      <p class="collab-resources">
+        <a href="{{ '/medhelm' | relative_url }}">Project overview</a>
+        <a href="https://github.com/PacificAI/medhelm/blob/main/CONTRIBUTING.md">Contributing guide</a>
+        <a href="https://github.com/PacificAI/medhelm/issues">Open issues</a>
+      </p>
+    </div>
+  </section>
+
+  <section class="collab-stage" id="best-practices" aria-labelledby="best-practices-title">
+    {% if include.embedded %}<h3 class="collab-stage-title" id="best-practices-title">Work reproducibly</h3>{% else %}<h2 class="collab-stage-title" id="best-practices-title">Work reproducibly</h2>{% endif %}
+    <div class="collab-stage-body">
+      <ol class="collab-task-list">
+        <li><strong>Scope one change.</strong> Check existing issues. State the workflow, what counts as success, and one failure the evaluation should catch.</li>
+        <li><strong>Check data access.</strong> Use a public or synthetic fixture in the benchmark environment. For a dataset proposal, record the source, license, access conditions, and creator credit.</li>
+        <li><strong>Pin the inputs.</strong> Record code and dataset versions, case IDs, model and deployment, run limits, and any judge and rubric settings. When comparing runs, hold the other inputs fixed, reset any stateful environment, and record whether cached results were used.</li>
+        <li><strong>Start with one case.</strong> Confirm that the scenario loads, the model responds, and the grader writes results. Check setup and judge errors before interpreting any score.</li>
+        <li><strong>Review the evidence.</strong> Compare the model’s response with the grading criteria. For browser tasks, also check the action log and final state. Record execution and judge errors separately from valid scores.</li>
+        <li><strong>Share the smallest reproducible result.</strong> Include the command or scoring rule, a short excerpt that can be shared, and one targeted regression test or assertion. Keep credentials, patient information, and restricted data out of reports and pull requests.</li>
+      </ol>
+      <p class="collab-resources">
+        <a href="{{ '/adding_new_scenarios' | relative_url }}">Adding scenarios</a>
+        <a href="{{ '/tutorial' | relative_url }}">Reading run outputs</a>
+      </p>
+    </div>
+  </section>
+
+  <section class="collab-stage" id="test" aria-labelledby="test-title">
+    {% if include.embedded %}<h3 class="collab-stage-title" id="test-title">Complete one test</h3>{% else %}<h2 class="collab-stage-title" id="test-title">Complete one test</h2>{% endif %}
+    <div class="collab-stage-body">
+      <p>Choose one benchmark. After setup, allow about 15 minutes for HEAD-QA, 30 minutes for HealthBench Professional, or an hour for HealthAdminBench.</p>
+
+      <div class="collab-exercises">
+        <details class="collab-exercise">
+          <summary>
+            <span>
+              <strong class="collab-exercise-title">HealthAdminBench</strong>
+              <span class="collab-exercise-subtitle">Browser agent · Two prior-authorization tasks · Requires Chromium and a benchmark portal</span>
+            </span>
+          </summary>
+          <div class="collab-exercise-body">
+            <p>Use the <a href="{{ '/health_admin_bench' | relative_url }}">HealthAdminBench setup guide</a> to install the harness and run its one-task smoke test. Confirm the portal launches and saves an episode result. The smoke test uses a random agent and may show judge errors if credentials are missing.</p>
+            <p>From the MedHELM checkout with its virtual environment active, run two synthetic v2 prior-authorization tasks with a configured agent model and a separate judge. Replace the example model and config values. The command assumes the v2 benchmark portal is running locally.</p>
+            <pre class="collab-command" tabindex="0" aria-label="HealthAdminBench command"><code>agent_model='provider/model-id'
+agent_deployment='provider/deployment-id'
+judge_config='path/to/judges.yaml'
+portal_url='http://localhost:3002'
+
+tasks='version=v2,task_ids=emr-easy-1+emr-easy-2'
+settings="observation_mode=axtree_only,max_steps=20,env_base_url=$portal_url"
+models="model=$agent_model,model_deployment=$agent_deployment"
+grader="jury_config_path=$judge_config"
+
+medhelm-run \
+  --run-entries "health_admin_bench:$tasks,$settings,$models,$grader" \
+  --suite collaborator_hab \
+  --max-eval-instances 2 \
+  --num-threads 1</code></pre>
+            <ol class="collab-task-list">
+              <li><strong>Record the run.</strong> Include the command, MedHELM and HealthAdminBench commits, the portal version, and the agent and judge deployments.</li>
+              <li><strong>Report each episode.</strong> Under <code>benchmark_output/runs/collaborator_hab/</code>, inspect <code>scenario_state.json</code> and <code>per_instance_stats.json</code>. For each task, record points earned and possible, full pass or fail, step count, and any execution or judge error. Flag a judge-error zero as a grading failure when interpreting the output.</li>
+              <li><strong>Trace one result.</strong> Cite one action, portal field, or grader finding behind a score. Distinguish a state-based JMESPath check from an LLM-judged check. Propose one targeted improvement and the assertion you would use to verify it.</li>
+            </ol>
+          </div>
+        </details>
+
+        <details class="collab-exercise">
+          <summary>
+            <span>
+              <strong class="collab-exercise-title">HealthBench Professional</strong>
+              <span class="collab-exercise-subtitle">Two clinician conversations · Physician-written rubrics · LLM judge</span>
+            </span>
+          </summary>
+          <div class="collab-exercise-body">
+            <p>Use the MedHELM <a href="{{ '/quick_start' | relative_url }}">Quick Start</a> and <a href="{{ '/credentials' | relative_url }}">credentials guide</a> to configure an answering model and a separate judge. Use a <a href="https://github.com/PacificAI/medhelm/blob/main/src/helm/benchmark/static/health_admin_bench_judges.yaml">judge YAML</a> with one judge and replace the values below with your deployment and config.</p>
+            <p>Run two <a href="https://huggingface.co/datasets/openai/healthbench-professional">HealthBench Professional</a> cases drawn from clinician consultations, documentation, and research. The model answers the final request in each conversation. MedHELM asks the judge to score the rubric items and separately compare the answer with the physician response.</p>
+            <pre class="collab-command" tabindex="0" aria-label="HealthBench Professional command"><code>answer_model='provider/model-id'
+answer_deployment='provider/deployment-id'
+judge_config='path/to/judges.yaml'
+
+answerer="model=$answer_model,model_deployment=$answer_deployment"
+grader="jury_config_path=$judge_config"
+
+medhelm-run \
+  --run-entries "health_bench_professional:$answerer,$grader" \
+  --suite collaborator_healthbench_professional \
+  --max-eval-instances 2 \
+  --num-threads 1</code></pre>
+            <ol class="collab-task-list">
+              <li><strong>Record the run.</strong> Include the command, MedHELM commit, and model and judge deployments. Under <code>benchmark_output/runs/collaborator_healthbench_professional/</code>, use <code>scenario_state.json</code> and <code>per_instance_stats.json</code> to report each <code>prompt_id</code> and its <code>health_bench_professional_score</code> when grading succeeds.</li>
+              <li><strong>Review one judgment.</strong> Inspect the judge’s saved <code>accuracy.criteria</code> and the case’s <code>extra_data.rubrics</code>. The physician comparison can add a separate entry. If grading fails or results are incomplete, report the failure and apply one rubric criterion manually to an available model answer.</li>
+              <li><strong>Specify a regression check.</strong> Describe a short synthetic request where a useful response would ask for a missing fact or acknowledge uncertainty. State how the judge should score one relevant criterion. Use case IDs and paraphrases to keep source examples out of public reports.</li>
+            </ol>
+          </div>
+        </details>
+
+        <details class="collab-exercise">
+          <summary>
+            <span>
+              <strong class="collab-exercise-title">HEAD-QA</strong>
+              <span class="collab-exercise-subtitle">Five multiple-choice questions · Exact match (EM)</span>
+            </span>
+          </summary>
+          <div class="collab-exercise-body">
+            <p>Use the <a href="{{ '/quick_start' | relative_url }}">MedHELM Quick Start</a> to run five text questions from the English <a href="https://aclanthology.org/P19-1092/">HEAD-QA</a> test set. Exact match checks the chosen answer against the answer key. The example uses the built-in test model so you can check the scoring pipeline without an API key. Use a configured answering model to assess answer quality.</p>
+            <pre class="collab-command" tabindex="0" aria-label="HEAD-QA command"><code>model_config='model=simple/model1,model_deployment=simple/model1'
+
+medhelm-run \
+  --run-entries "head_qa:language=en,$model_config" \
+  --suite collaborator_head_qa \
+  --max-eval-instances 5 \
+  --num-threads 1</code></pre>
+            <ol class="collab-task-list">
+              <li><strong>Record the run.</strong> Include the command, MedHELM commit, and model deployment.</li>
+              <li><strong>Report only exact match.</strong> Under <code>benchmark_output/runs/collaborator_head_qa/</code>, read <code>exact_match</code> in <code>stats.json</code>. Confirm it by dividing the number of correct answers by the number of scored questions in <code>per_instance_stats.json</code>. Report any failed requests separately.</li>
+              <li><strong>Check one item.</strong> Use <code>scenario_state.json</code> to identify one question ID, the model’s output, and the correct choice. Explain its match result.</li>
+            </ol>
+          </div>
+        </details>
+      </div>
+      <p>If setup blocks you, email the failing step and a short, redacted error.</p>
+    </div>
+  </section>
+
+  <section class="collab-stage" id="submit" aria-labelledby="submit-title">
+    {% if include.embedded %}<h3 class="collab-stage-title" id="submit-title">Submit your contribution</h3>{% else %}<h2 class="collab-stage-title" id="submit-title">Submit your contribution</h2>{% endif %}
+    <div class="collab-stage-body">
+      <p>Send your test contribution by email. Include your results in the message or share a link the reviewer can open.</p>
+      <ul class="collab-submit-list">
+        <li>Your name, the test you completed, and the requested results.</li>
+        <li>The area you’d like to work on and your approximate availability.</li>
+        <li>Your GitHub handle or a relevant issue, if you have one.</li>
+      </ul>
+      <p>Keep patient information, restricted data, and credentials out of your submission.</p>
+      <p><a class="collab-button" href="mailto:medhelm@PacificAI.onmicrosoft.com?subject=MedHELM%20test%20contribution&amp;body=Name%3A%0D%0ATest%20completed%3A%0D%0AContribution%20or%20link%3A%0D%0AContribution%20interest%20and%20availability%3A%0D%0AGitHub%20handle%20or%20issue%20(optional)%3A">Email medhelm@PacificAI.onmicrosoft.com</a></p>
+      <div class="collab-after">
+        <h3>What happens next</h3>
+        <p>A maintainer checks that they can reproduce your run and that the evidence supports your interpretation of the score. They may ask a follow-up question. If there’s a fit, you’ll agree on one starter issue with a success criterion and get any project access it requires.</p>
+      </div>
+    </div>
+  </section>
+
+  <p class="collab-public">Public issues and pull requests are open to everyone. If you’re looking to propose a dataset on behalf of an institution, <a href="mailto:medhelm@PacificAI.onmicrosoft.com?subject=MedHELM%20dataset%20proposal">contact the research team</a> with a short description and its access requirements.</p>
+</article>

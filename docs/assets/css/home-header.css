@@ -1,0 +1,74 @@
+  /* ============ TOP NAV ============ */
+  .topbar {
+    border-bottom: 1px solid rgba(0,0,0,0.08);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    backdrop-filter: saturate(180%) blur(20px);
+    -webkit-backdrop-filter: saturate(180%) blur(20px);
+    background-color: rgba(255, 255, 255, 0.82);
+  }
+  .topbar-inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 64px;
+  }
+  .wordmark {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--ink);
+    font-family: var(--sans);
+    font-weight: 700;
+    font-size: 22px;
+    letter-spacing: -0.03em;
+    line-height: 1;
+  }
+  .wordmark .mark {
+    height: 32px;
+    width: 32px;
+    display: block;
+    flex-shrink: 0;
+  }
+  .wordmark .name { display: inline-block; }
+  .nav { display: flex; align-items: center; gap: 28px; }
+  .nav a {
+    font-size: 14px;
+    color: var(--ink-soft);
+    font-weight: 500;
+    letter-spacing: 0.01em;
+  }
+  .nav a:hover { color: var(--teal-deep); text-decoration: none; }
+  .nav .gh-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--ink);
+    border: 1.5px solid var(--ink);
+    padding: 8px 18px;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    color: #FFFFFF;
+    border-radius: var(--radius-pill);
+    transition: background var(--dur-fast) var(--ease),
+                border-color var(--dur-fast) var(--ease),
+                transform var(--dur-fast) var(--ease),
+                box-shadow var(--dur-fast) var(--ease);
+  }
+  .nav .gh-btn:hover {
+    background: var(--teal-deep);
+    border-color: var(--teal-deep);
+    color: #FFFFFF;
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-md);
+    text-decoration: none;
+  }
+
+  .topbar .container { max-width: 1160px; margin: 0 auto; padding: 0 40px; }
+  .topbar a { text-decoration: none; }
+  @media (max-width: 880px) { .topbar .nav { display: none; } }
+  [data-theme="dark"] .topbar { background-color: rgba(15,15,17,0.85); border-bottom-color: rgba(255,255,255,0.07); }
+  [data-theme="dark"] .nav .gh-btn { background: #fff; color: #1D1D1F; border-color: #fff; }
+  [data-theme="dark"] .nav .gh-btn:hover { background: var(--teal); color: #fff; border-color: var(--teal); box-shadow: 0 8px 24px rgba(45,196,240,0.25); }
