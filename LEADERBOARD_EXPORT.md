@@ -50,6 +50,45 @@ rsync -av \
   . $OUTPUT_PATH
 ```
 
+### Redact licensed scenario data but keep the instance view
+
+Some scenarios are built from licensed data that must not be redistributed, and pass it in
+via a separately downloaded `data_path` (currently **CPC-QA**, whose case records are licensed
+from NEJM). A normal run publishes that data in full: `scenario_state.json` holds the case
+text, the answer options and the prompt, the three `display_*.json` files are derived from it,
+and `helm-server` serves everything under `OUTPUT_PATH` with no access check.
+
+Excluding the files as above works, but drops the whole instance view and the per-instance
+stats. To keep both while blanking the licensed text, redact the suite instead:
+
+```bash
+python scripts/medhelm/redact_instances.py --suite <suite> -o "$OUTPUT_PATH"
+helm-summarize --suite <suite> -o "$OUTPUT_PATH"
+python scripts/medhelm/redact_instances.py --suite <suite> -o "$OUTPUT_PATH" --check
+```
+
+The first command rewrites `scenario_state.json` in place, replacing the instance input, the
+answer options and the request prompt with `[redacted]`. `helm-summarize` then regenerates the
+display files from the redacted state. Scores cannot change: `stats.json` and
+`per_instance_stats.json` are written during `medhelm-run`, before redaction, and stay
+byte-identical.
+
+`--check` is the gate. It is read-only and exits non-zero if any licensed string from the
+source dataset still appears in any artifact. **Run it immediately before every step below** —
+`--export-path`, `gcloud storage rsync` and starting `helm-server` on a reachable host all
+publish whatever is on disk.
+
+Notes:
+
+- Redaction is destructive and in place. The unredacted artifacts only exist on the machine
+  that ran the eval, so redact a copy if you still need the case text for debugging.
+- It is idempotent, so it is safe to re-run on a suite that may already be redacted.
+- It only touches scenarios listed in `RESTRICTED_SCENARIOS` in the script (`cpc_qa` today);
+  override with `--scenarios`. Every other run in the suite passes through untouched.
+- Model completions are kept so per-instance answers stay debuggable. For a scenario whose
+  answers are single letters this is safe, but a reasoning model can quote the case back
+  through its completion text; `--check` warns when a completion is suspiciously long.
+
 ## 2. Optional: rebuild the UI
 
 Only needed after editing `helm-frontend/`:

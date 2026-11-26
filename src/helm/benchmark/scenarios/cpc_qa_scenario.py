@@ -28,6 +28,11 @@ class CPCQAScenario(Scenario):
     redistributed with MedHELM, so the dataset must be downloaded separately and passed to
     this scenario via `data_path`.
 
+    Because the case text ends up in the run artifacts, a run of this scenario must be
+    redacted with `scripts/medhelm/redact_instances.py` before it is served, exported or
+    copied anywhere. See "Redact licensed scenario data but keep the instance view" in
+    LEADERBOARD_EXPORT.md.
+
     The data file is a JSON list of question records. The following is an example
     from the dataset:
 
