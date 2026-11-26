@@ -5,6 +5,7 @@ from typing import Any, Dict, List
 
 import pytest
 
+from helm.benchmark.scenarios import cpc_qa_scenario
 from helm.benchmark.scenarios.cpc_qa_scenario import CPCQAScenario
 from helm.benchmark.scenarios.scenario import CORRECT_TAG, TEST_SPLIT, Instance
 
@@ -143,6 +144,28 @@ def test_malformed_record_does_not_drop_the_valid_ones():
     payload = [_record(), _record(correct_answer="Z"), _record(question_num=3)]
 
     assert len(_instances(payload)) == 2
+
+
+def test_skipped_records_are_warned_about(monkeypatch):
+    warnings: List[str] = []
+    monkeypatch.setattr(cpc_qa_scenario, "hwarn", warnings.append)
+
+    _instances([_record(), _record(correct_answer="Z", question_num=2)])
+
+    assert len(warnings) == 1
+    assert "Skipped 1 of 2" in warnings[0]
+    assert "dataset_100.json" in warnings[0]
+    assert "NEJM200003303421308 (question 2)" in warnings[0]
+    assert "correct_answer 'Z' is not one of the options" in warnings[0]
+
+
+def test_no_warning_when_every_record_is_valid(monkeypatch):
+    warnings: List[str] = []
+    monkeypatch.setattr(cpc_qa_scenario, "hwarn", warnings.append)
+
+    _instances([_record(), _record(question_num=2)])
+
+    assert warnings == []
 
 
 # ---------------------------------------------------------------------------

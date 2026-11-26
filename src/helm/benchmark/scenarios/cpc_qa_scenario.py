@@ -13,6 +13,7 @@ from helm.benchmark.scenarios.scenario import (
     ScenarioMetadata,
 )
 from helm.common.general import check_file_exists
+from helm.common.hierarchical_logger import hwarn
 
 
 class CPCQAScenario(Scenario):
@@ -96,31 +97,45 @@ class CPCQAScenario(Scenario):
             raise ValueError(f"[CPCQAScenario] Expected a JSON list of records in '{self.data_path}'")
 
         instances: List[Instance] = []
-        for record in records:
-            instance = self._create_instance(record)
-            if instance is not None:
-                instances.append(instance)
+        skipped: List[str] = []
+        for index, record in enumerate(records):
+            rejection = self._rejection_reason(record)
+            if rejection is None:
+                instances.append(self._create_instance(record))
+                continue
+            case_id = record.get("id") or f"record {index}"
+            skipped.append(f"{case_id} (question {record.get('question_num', '?')}): {rejection}")
+
+        if skipped:
+            hwarn(
+                f"[CPCQAScenario] Skipped {len(skipped)} of {len(records)} malformed records "
+                f"in '{self.data_path}': " + "; ".join(skipped)
+            )
 
         return instances
 
-    def _create_instance(self, record: Dict[str, Any]) -> Optional[Instance]:
-        presentation: str = record.get("presentation_of_case", "")
-        question: str = record.get("question", "")
-        options: Dict[str, str] = record.get("options", {})
-        correct_answer: str = record.get("correct_answer", "")
+    @staticmethod
+    def _rejection_reason(record: Dict[str, Any]) -> Optional[str]:
+        missing = [field for field in ("presentation_of_case", "question", "options") if not record.get(field)]
+        if missing:
+            return "missing " + ", ".join(missing)
+        if record.get("correct_answer") not in record["options"]:
+            return f"correct_answer {record.get('correct_answer')!r} is not one of the options"
+        return None
 
-        if not presentation or not question or not options or correct_answer not in options:
-            return None
+    def _create_instance(self, record: Dict[str, Any]) -> Instance:
+        options: Dict[str, str] = record["options"]
+        correct_answer: str = record["correct_answer"]
 
         references: List[Reference] = [
             Reference(Output(text=options[letter]), tags=[CORRECT_TAG] if letter == correct_answer else [])
             for letter in sorted(options)
         ]
         prompt = PassageQuestionInput(
-            passage=presentation,
+            passage=record["presentation_of_case"],
             # The trailing newline separates the question from the lettered answer
             # choices that the multiple-choice adapter appends.
-            question=question + "\n",
+            question=record["question"] + "\n",
             passage_prefix="Case presentation: ",
             separator="\n\n",
         )
