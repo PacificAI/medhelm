@@ -650,6 +650,7 @@ run_groups:
       - health_bench_professional
       - physician_bench
       - medxpert_qa_text
+      - cpc_qa
 
   - name: clinical_note_generation
     display_name: Clinical Note Generation
@@ -1529,3 +1530,21 @@ run_groups:
       who: Clinician, Legal Compliance Officer
       when: Pre-procedure or prior to information sharing
       language: English
+  
+  - name: cpc_qa
+    display_name: CPC-QA
+    description: CPC-QA is a clinical question-answering benchmark built from New England Journal of Medicine Clinicopathological Conference case records. Each multiple-choice question is grounded in a full patient case presentation and assesses a model's ability to interpret the case and apply clinical concept and factual knowledge [(CPC-Bench, 2025)](https://arxiv.org/abs/2509.12194).
+    metric_groups:
+      - accuracy
+      - efficiency
+      - general_information
+    environment:
+      main_name: exact_match
+      main_split: test
+    taxonomy:
+      task: Question answering
+      what: Answer questions based on patient case presentation
+      who: Researcher
+      when: Any
+      language: English
+      
